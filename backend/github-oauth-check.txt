@@ -1,0 +1,24 @@
+========================================
+Configuration GitHub OAuth Requise
+========================================
+
+L'URL de callback doit être EXACTEMENT :
+http://localhost:4000/api/auth/github/callback
+
+Pas :
+- http://localhost:4000/auth/github/callback (sans /api)
+- https://localhost:4000/api/auth/github/callback (avec https)
+- http://127.0.0.1:4000/api/auth/github/callback (127.0.0.1 au lieu de localhost)
+
+Étapes pour corriger :
+1. https://github.com/settings/developers
+2. Cliquer sur votre OAuth App
+3. Authorization callback URL = http://localhost:4000/api/auth/github/callback
+4. Update application
+
+Ensuite, mettez à jour backend/.env avec :
+GITHUB_CLIENT_ID=votre_nouveau_client_id
+GITHUB_CLIENT_SECRET=votre_nouveau_client_secret
+GITHUB_CALLBACK_URL=http://localhost:4000/api/auth/github/callback
+
+Et redémarrez le backend.

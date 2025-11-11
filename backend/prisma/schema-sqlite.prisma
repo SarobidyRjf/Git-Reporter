@@ -1,0 +1,33 @@
+// This is your Prisma schema file for SQLite
+// Use this as a fallback if PostgreSQL is not available
+// To use: rename this file to schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  githubId  String   @unique
+  name      String?
+  email     String?
+  avatarUrl String?
+  reports   Report[]
+}
+
+model Report {
+  id        String   @id @default(cuid())
+  userId    String
+  repoName  String
+  content   String
+  sentTo    String?
+  method    String   // "email" ou "whatsapp"
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
