@@ -1,404 +1,686 @@
 <script setup lang="ts">
 /**
- * Page Paramètres - Configuration de l'application
+ * Settings - Page de configuration
  *
- * Permet à l'utilisateur de configurer :
- * - Préférences d'affichage
- * - Paramètres d'envoi (Email, WhatsApp)
- * - Notifications
- * - Compte
+ * Fonctionnalités :
+ * - Paramètres de notification
+ * - Préférences d'envoi
+ * - Configuration GitHub
+ * - Paramètres de compte
  */
-import { Save, Mail, MessageSquare, Bell, User, LogOut, Shield } from 'lucide-vue-next';
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '../stores/auth.store';
+import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "../stores/auth.store";
+import {
+  Settings as SettingsIcon,
+  Mail,
+  MessageCircle,
+  Github,
+  Bell,
+  Lock,
+  User,
+  Palette,
+  Globe,
+  Save,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+} from "lucide-vue-next";
+import AppLayout from "../components/AppLayout.vue";
 
 const router = useRouter();
 const authStore = useAuthStore();
 
-// ============================================================================
-// STATE
-// ============================================================================
-
+// État
 const isSaving = ref(false);
-const saveMessage = ref('');
+const saveMessage = ref("");
+const saveStatus = ref<"success" | "error" | "">("");
 
-// Paramètres Email
-const emailSettings = ref({
-  defaultEmail: '',
-  emailNotifications: true,
+// Settings
+const settings = ref({
+  notifications: {
+    emailReports: true,
+    reportSent: true,
+    reportFailed: true,
+    weeklyDigest: false,
+  },
+  email: {
+    defaultRecipient: "",
+    ccMyself: true,
+    signatureEnabled: true,
+    signature: "Envoyé depuis Git Reporter",
+  },
+  whatsapp: {
+    defaultNumber: "",
+    includeTimestamp: true,
+    formatMarkdown: true,
+  },
+  github: {
+    autoFetchCommits: true,
+    defaultBranch: "main",
+    includeAuthorInfo: true,
+    maxCommits: 50,
+  },
+  appearance: {
+    theme: "dark",
+    language: "fr",
+    dateFormat: "DD/MM/YYYY",
+  },
+  privacy: {
+    shareAnalytics: false,
+    saveHistory: true,
+    autoDeleteAfter: 90,
+  },
 });
 
-// Paramètres WhatsApp
-const whatsappSettings = ref({
-  defaultNumber: '',
-  whatsappNotifications: true,
+// Fonctions
+onMounted(() => {
+  loadSettings();
 });
 
-// Paramètres généraux
-const generalSettings = ref({
-  autoSave: true,
-  darkMode: true,
-  language: 'fr',
-});
-
-// ============================================================================
-// METHODS
-// ============================================================================
-
-/**
- * Charge les paramètres depuis l'API
- */
-async function loadSettings() {
-  // TODO: Implémenter la récupération des paramètres depuis l'API
-  // Pour l'instant, on utilise des valeurs par défaut
-  emailSettings.value.defaultEmail = authStore.userEmail || '';
+function loadSettings() {
+  // Charger les paramètres depuis l'API ou localStorage
+  const savedSettings = localStorage.getItem("git-reporter-settings");
+  if (savedSettings) {
+    try {
+      const parsed = JSON.parse(savedSettings);
+      settings.value = { ...settings.value, ...parsed };
+    } catch (e) {
+      console.error("Erreur lors du chargement des paramètres:", e);
+    }
+  }
 }
 
-/**
- * Sauvegarde les paramètres
- */
 async function saveSettings() {
+  isSaving.value = true;
+  saveMessage.value = "";
+  saveStatus.value = "";
+
   try {
-    isSaving.value = true;
-    saveMessage.value = '';
+    // Sauvegarder dans localStorage (ou envoyer à l'API)
+    localStorage.setItem(
+      "git-reporter-settings",
+      JSON.stringify(settings.value),
+    );
 
-    // TODO: Implémenter la sauvegarde des paramètres via l'API
-    // await apiService.updateSettings({ ... });
-
-    // Simulation d'un délai
+    // Simuler un délai réseau
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    saveMessage.value = 'Paramètres sauvegardés avec succès !';
+    saveStatus.value = "success";
+    saveMessage.value = "✓ Paramètres sauvegardés avec succès !";
 
-    // Effacer le message après 3 secondes
     setTimeout(() => {
-      saveMessage.value = '';
+      saveMessage.value = "";
+      saveStatus.value = "";
     }, 3000);
   } catch (error) {
-    console.error('Erreur lors de la sauvegarde:', error);
-    saveMessage.value = 'Erreur lors de la sauvegarde des paramètres';
+    saveStatus.value = "error";
+    saveMessage.value = "✗ Erreur lors de la sauvegarde des paramètres";
   } finally {
     isSaving.value = false;
   }
 }
 
-/**
- * Réinitialise les paramètres par défaut
- */
 function resetSettings() {
-  if (confirm('Êtes-vous sûr de vouloir réinitialiser tous les paramètres ?')) {
-    emailSettings.value = {
-      defaultEmail: authStore.userEmail || '',
-      emailNotifications: true,
-    };
-    whatsappSettings.value = {
-      defaultNumber: '',
-      whatsappNotifications: true,
-    };
-    generalSettings.value = {
-      autoSave: true,
-      darkMode: true,
-      language: 'fr',
-    };
-    saveMessage.value = 'Paramètres réinitialisés';
+  if (confirm("Êtes-vous sûr de vouloir réinitialiser tous les paramètres ?")) {
+    localStorage.removeItem("git-reporter-settings");
+    loadSettings();
+    saveMessage.value = "Paramètres réinitialisés";
+    saveStatus.value = "success";
   }
 }
-
-/**
- * Déconnexion
- */
-async function handleLogout() {
-  if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
-    await authStore.logout();
-    router.push({ name: 'Login' });
-  }
-}
-
-/**
- * Retour au dashboard
- */
-function goToDashboard() {
-  router.push({ name: 'Dashboard' });
-}
-
-// ============================================================================
-// LIFECYCLE
-// ============================================================================
-
-onMounted(() => {
-  loadSettings();
-});
 </script>
 
 <template>
-  <div class="min-h-screen bg-zinc-950 text-white">
-    <!-- Header -->
-    <header class="bg-zinc-900/30 border-b border-zinc-800 px-6 py-4">
-      <div class="max-w-4xl mx-auto flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl font-bold">Paramètres</h1>
-          <p class="text-sm text-zinc-400 mt-1">
-            Gérez vos préférences et configurations
-          </p>
+  <AppLayout>
+    <div class="h-full overflow-y-auto">
+      <div class="max-w-4xl mx-auto p-6 space-y-6">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center"
+            >
+              <SettingsIcon :size="20" class="text-blue-400" />
+            </div>
+            <div>
+              <h1 class="text-2xl font-bold text-white">Paramètres</h1>
+              <p class="text-sm text-zinc-400">
+                Configurez votre expérience Git Reporter
+              </p>
+            </div>
+          </div>
         </div>
 
-        <button
-          @click="goToDashboard"
-          class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors text-sm"
-        >
-          Retour au Dashboard
-        </button>
-      </div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="max-w-4xl mx-auto px-6 py-8">
-      <div class="space-y-6">
-        <!-- Paramètres Email -->
-        <div class="bg-zinc-900/50 border border-zinc-800 rounded-lg p-6">
+        <!-- Notifications -->
+        <div class="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
           <div class="flex items-center gap-3 mb-6">
-            <div class="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
+            <div
+              class="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center"
+            >
+              <Bell :size="20" class="text-purple-400" />
+            </div>
+            <div>
+              <h2 class="text-lg font-semibold text-white">Notifications</h2>
+              <p class="text-sm text-zinc-400">
+                Gérez vos préférences de notification
+              </p>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <label
+              class="flex items-center justify-between p-4 bg-zinc-900/50 rounded-lg hover:bg-zinc-900/80 transition-colors cursor-pointer"
+            >
+              <div class="flex-1">
+                <div class="text-sm font-medium text-white">
+                  Notifications par email
+                </div>
+                <div class="text-xs text-zinc-400 mt-1">
+                  Recevoir des emails de notification
+                </div>
+              </div>
+              <input
+                v-model="settings.notifications.emailReports"
+                type="checkbox"
+                class="w-5 h-5 rounded bg-zinc-800 border-zinc-700 text-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0"
+              />
+            </label>
+
+            <label
+              class="flex items-center justify-between p-4 bg-zinc-900/50 rounded-lg hover:bg-zinc-900/80 transition-colors cursor-pointer"
+            >
+              <div class="flex-1">
+                <div class="text-sm font-medium text-white">
+                  Rapport envoyé avec succès
+                </div>
+                <div class="text-xs text-zinc-400 mt-1">
+                  Confirmation d'envoi de rapport
+                </div>
+              </div>
+              <input
+                v-model="settings.notifications.reportSent"
+                type="checkbox"
+                class="w-5 h-5 rounded bg-zinc-800 border-zinc-700 text-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0"
+              />
+            </label>
+
+            <label
+              class="flex items-center justify-between p-4 bg-zinc-900/50 rounded-lg hover:bg-zinc-900/80 transition-colors cursor-pointer"
+            >
+              <div class="flex-1">
+                <div class="text-sm font-medium text-white">Échec d'envoi</div>
+                <div class="text-xs text-zinc-400 mt-1">
+                  Alertes en cas d'erreur d'envoi
+                </div>
+              </div>
+              <input
+                v-model="settings.notifications.reportFailed"
+                type="checkbox"
+                class="w-5 h-5 rounded bg-zinc-800 border-zinc-700 text-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0"
+              />
+            </label>
+
+            <label
+              class="flex items-center justify-between p-4 bg-zinc-900/50 rounded-lg hover:bg-zinc-900/80 transition-colors cursor-pointer"
+            >
+              <div class="flex-1">
+                <div class="text-sm font-medium text-white">
+                  Résumé hebdomadaire
+                </div>
+                <div class="text-xs text-zinc-400 mt-1">
+                  Recevoir un résumé chaque semaine
+                </div>
+              </div>
+              <input
+                v-model="settings.notifications.weeklyDigest"
+                type="checkbox"
+                class="w-5 h-5 rounded bg-zinc-800 border-zinc-700 text-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0"
+              />
+            </label>
+          </div>
+        </div>
+
+        <!-- Email Settings -->
+        <div class="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
+          <div class="flex items-center gap-3 mb-6">
+            <div
+              class="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center"
+            >
               <Mail :size="20" class="text-blue-400" />
             </div>
             <div>
-              <h2 class="text-lg font-semibold">Paramètres Email</h2>
-              <p class="text-sm text-zinc-400">
-                Configuration de l'envoi par email
-              </p>
+              <h2 class="text-lg font-semibold text-white">
+                Configuration Email
+              </h2>
+              <p class="text-sm text-zinc-400">Paramètres d'envoi par email</p>
             </div>
           </div>
 
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium mb-2">
-                Email par défaut
+              <label class="block text-sm font-medium text-zinc-300 mb-2">
+                Destinataire par défaut
               </label>
               <input
-                v-model="emailSettings.defaultEmail"
+                v-model="settings.email.defaultRecipient"
                 type="email"
-                placeholder="votre.email@example.com"
-                class="w-full bg-zinc-800/50 border border-zinc-700 rounded-lg px-4 py-3 text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="exemple@email.com"
+                class="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
               />
-              <p class="text-xs text-zinc-500 mt-2">
-                Cet email sera utilisé comme destinataire par défaut
-              </p>
             </div>
 
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="font-medium">Notifications par email</p>
-                <p class="text-sm text-zinc-400">
-                  Recevoir des notifications quand un rapport est envoyé
-                </p>
+            <label
+              class="flex items-center justify-between p-4 bg-zinc-900/50 rounded-lg hover:bg-zinc-900/80 transition-colors cursor-pointer"
+            >
+              <div class="flex-1">
+                <div class="text-sm font-medium text-white">
+                  M'envoyer une copie
+                </div>
+                <div class="text-xs text-zinc-400 mt-1">
+                  Recevoir une copie de chaque rapport
+                </div>
               </div>
-              <label class="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  v-model="emailSettings.emailNotifications"
-                  class="sr-only peer"
-                />
-                <div class="w-11 h-6 bg-zinc-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              <input
+                v-model="settings.email.ccMyself"
+                type="checkbox"
+                class="w-5 h-5 rounded bg-zinc-800 border-zinc-700 text-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0"
+              />
+            </label>
+
+            <label
+              class="flex items-center justify-between p-4 bg-zinc-900/50 rounded-lg hover:bg-zinc-900/80 transition-colors cursor-pointer"
+            >
+              <div class="flex-1">
+                <div class="text-sm font-medium text-white">
+                  Signature automatique
+                </div>
+                <div class="text-xs text-zinc-400 mt-1">
+                  Ajouter une signature aux emails
+                </div>
+              </div>
+              <input
+                v-model="settings.email.signatureEnabled"
+                type="checkbox"
+                class="w-5 h-5 rounded bg-zinc-800 border-zinc-700 text-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0"
+              />
+            </label>
+
+            <div v-if="settings.email.signatureEnabled">
+              <label class="block text-sm font-medium text-zinc-300 mb-2">
+                Signature
               </label>
+              <textarea
+                v-model="settings.email.signature"
+                rows="3"
+                placeholder="Votre signature..."
+                class="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 resize-none"
+              ></textarea>
             </div>
           </div>
         </div>
 
-        <!-- Paramètres WhatsApp -->
-        <div class="bg-zinc-900/50 border border-zinc-800 rounded-lg p-6">
+        <!-- WhatsApp Settings -->
+        <div class="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
           <div class="flex items-center gap-3 mb-6">
-            <div class="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center">
-              <MessageSquare :size="20" class="text-green-400" />
+            <div
+              class="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center"
+            >
+              <MessageCircle :size="20" class="text-green-400" />
             </div>
             <div>
-              <h2 class="text-lg font-semibold">Paramètres WhatsApp</h2>
+              <h2 class="text-lg font-semibold text-white">
+                Configuration WhatsApp
+              </h2>
               <p class="text-sm text-zinc-400">
-                Configuration de l'envoi par WhatsApp
+                Paramètres d'envoi via WhatsApp
               </p>
             </div>
           </div>
 
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium mb-2">
-                Numéro WhatsApp par défaut
+              <label class="block text-sm font-medium text-zinc-300 mb-2">
+                Numéro par défaut
               </label>
               <input
-                v-model="whatsappSettings.defaultNumber"
+                v-model="settings.whatsapp.defaultNumber"
                 type="tel"
-                placeholder="+33 6 00 00 00 00"
-                class="w-full bg-zinc-800/50 border border-zinc-700 rounded-lg px-4 py-3 text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="+33612345678"
+                class="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
               />
-              <p class="text-xs text-zinc-500 mt-2">
-                Format international avec indicatif pays (ex: +33 6 12 34 56 78)
-              </p>
             </div>
 
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="font-medium">Notifications WhatsApp</p>
-                <p class="text-sm text-zinc-400">
-                  Recevoir des notifications quand un rapport est envoyé
-                </p>
+            <label
+              class="flex items-center justify-between p-4 bg-zinc-900/50 rounded-lg hover:bg-zinc-900/80 transition-colors cursor-pointer"
+            >
+              <div class="flex-1">
+                <div class="text-sm font-medium text-white">
+                  Inclure l'horodatage
+                </div>
+                <div class="text-xs text-zinc-400 mt-1">
+                  Ajouter la date et l'heure aux messages
+                </div>
               </div>
-              <label class="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  v-model="whatsappSettings.whatsappNotifications"
-                  class="sr-only peer"
-                />
-                <div class="w-11 h-6 bg-zinc-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
-              </label>
-            </div>
+              <input
+                v-model="settings.whatsapp.includeTimestamp"
+                type="checkbox"
+                class="w-5 h-5 rounded bg-zinc-800 border-zinc-700 text-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0"
+              />
+            </label>
+
+            <label
+              class="flex items-center justify-between p-4 bg-zinc-900/50 rounded-lg hover:bg-zinc-900/80 transition-colors cursor-pointer"
+            >
+              <div class="flex-1">
+                <div class="text-sm font-medium text-white">
+                  Format Markdown
+                </div>
+                <div class="text-xs text-zinc-400 mt-1">
+                  Formater le texte avec Markdown
+                </div>
+              </div>
+              <input
+                v-model="settings.whatsapp.formatMarkdown"
+                type="checkbox"
+                class="w-5 h-5 rounded bg-zinc-800 border-zinc-700 text-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0"
+              />
+            </label>
           </div>
         </div>
 
-        <!-- Paramètres Généraux -->
-        <div class="bg-zinc-900/50 border border-zinc-800 rounded-lg p-6">
+        <!-- GitHub Settings -->
+        <div class="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
           <div class="flex items-center gap-3 mb-6">
-            <div class="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center">
-              <Shield :size="20" class="text-purple-400" />
+            <div
+              class="w-10 h-10 bg-orange-500/10 rounded-lg flex items-center justify-center"
+            >
+              <Github :size="20" class="text-orange-400" />
             </div>
             <div>
-              <h2 class="text-lg font-semibold">Paramètres Généraux</h2>
+              <h2 class="text-lg font-semibold text-white">
+                Configuration GitHub
+              </h2>
               <p class="text-sm text-zinc-400">
-                Préférences d'affichage et comportement
+                Paramètres de connexion GitHub
               </p>
             </div>
           </div>
 
           <div class="space-y-4">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="font-medium">Sauvegarde automatique</p>
-                <p class="text-sm text-zinc-400">
-                  Sauvegarder automatiquement les brouillons de rapports
-                </p>
+            <label
+              class="flex items-center justify-between p-4 bg-zinc-900/50 rounded-lg hover:bg-zinc-900/80 transition-colors cursor-pointer"
+            >
+              <div class="flex-1">
+                <div class="text-sm font-medium text-white">
+                  Récupération automatique
+                </div>
+                <div class="text-xs text-zinc-400 mt-1">
+                  Charger les commits automatiquement
+                </div>
               </div>
-              <label class="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  v-model="generalSettings.autoSave"
-                  class="sr-only peer"
-                />
-                <div class="w-11 h-6 bg-zinc-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+              <input
+                v-model="settings.github.autoFetchCommits"
+                type="checkbox"
+                class="w-5 h-5 rounded bg-zinc-800 border-zinc-700 text-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0"
+              />
+            </label>
+
+            <div>
+              <label class="block text-sm font-medium text-zinc-300 mb-2">
+                Branche par défaut
               </label>
+              <input
+                v-model="settings.github.defaultBranch"
+                type="text"
+                placeholder="main"
+                class="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+              />
             </div>
 
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="font-medium">Mode sombre</p>
-                <p class="text-sm text-zinc-400">
-                  Activer le thème sombre (actuellement actif)
-                </p>
+            <label
+              class="flex items-center justify-between p-4 bg-zinc-900/50 rounded-lg hover:bg-zinc-900/80 transition-colors cursor-pointer"
+            >
+              <div class="flex-1">
+                <div class="text-sm font-medium text-white">
+                  Inclure les informations auteur
+                </div>
+                <div class="text-xs text-zinc-400 mt-1">
+                  Afficher nom et email de l'auteur
+                </div>
               </div>
-              <label class="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  v-model="generalSettings.darkMode"
-                  class="sr-only peer"
-                  disabled
-                />
-                <div class="w-11 h-6 bg-zinc-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+              <input
+                v-model="settings.github.includeAuthorInfo"
+                type="checkbox"
+                class="w-5 h-5 rounded bg-zinc-800 border-zinc-700 text-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0"
+              />
+            </label>
+
+            <div>
+              <label class="block text-sm font-medium text-zinc-300 mb-2">
+                Nombre maximum de commits
               </label>
+              <input
+                v-model.number="settings.github.maxCommits"
+                type="number"
+                min="10"
+                max="100"
+                class="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Appearance -->
+        <div class="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
+          <div class="flex items-center gap-3 mb-6">
+            <div
+              class="w-10 h-10 bg-pink-500/10 rounded-lg flex items-center justify-center"
+            >
+              <Palette :size="20" class="text-pink-400" />
+            </div>
+            <div>
+              <h2 class="text-lg font-semibold text-white">Apparence</h2>
+              <p class="text-sm text-zinc-400">Personnalisez l'interface</p>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-zinc-300 mb-2">
+                Thème
+              </label>
+              <select
+                v-model="settings.appearance.theme"
+                class="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+              >
+                <option value="dark">Sombre</option>
+                <option value="light">Clair</option>
+                <option value="auto">Automatique</option>
+              </select>
             </div>
 
             <div>
-              <label class="block text-sm font-medium mb-2">
+              <label class="block text-sm font-medium text-zinc-300 mb-2">
                 Langue
               </label>
               <select
-                v-model="generalSettings.language"
-                class="w-full bg-zinc-800/50 border border-zinc-700 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                v-model="settings.appearance.language"
+                class="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
               >
                 <option value="fr">Français</option>
                 <option value="en">English</option>
                 <option value="es">Español</option>
               </select>
             </div>
+
+            <div>
+              <label class="block text-sm font-medium text-zinc-300 mb-2">
+                Format de date
+              </label>
+              <select
+                v-model="settings.appearance.dateFormat"
+                class="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+              >
+                <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        <!-- Actions -->
-        <div class="flex flex-col sm:flex-row gap-4">
-          <button
-            @click="saveSettings"
-            :disabled="isSaving"
-            class="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-zinc-700 disabled:to-zinc-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
-          >
-            <Save :size="20" :class="{ 'animate-pulse': isSaving }" />
-            <span>
-              {{ isSaving ? 'Sauvegarde...' : 'Enregistrer les modifications' }}
-            </span>
-          </button>
+        <!-- Privacy -->
+        <div class="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
+          <div class="flex items-center gap-3 mb-6">
+            <div
+              class="w-10 h-10 bg-red-500/10 rounded-lg flex items-center justify-center"
+            >
+              <Lock :size="20" class="text-red-400" />
+            </div>
+            <div>
+              <h2 class="text-lg font-semibold text-white">Confidentialité</h2>
+              <p class="text-sm text-zinc-400">
+                Gérez vos données personnelles
+              </p>
+            </div>
+          </div>
 
+          <div class="space-y-4">
+            <label
+              class="flex items-center justify-between p-4 bg-zinc-900/50 rounded-lg hover:bg-zinc-900/80 transition-colors cursor-pointer"
+            >
+              <div class="flex-1">
+                <div class="text-sm font-medium text-white">
+                  Partager les analyses
+                </div>
+                <div class="text-xs text-zinc-400 mt-1">
+                  Aider à améliorer l'application
+                </div>
+              </div>
+              <input
+                v-model="settings.privacy.shareAnalytics"
+                type="checkbox"
+                class="w-5 h-5 rounded bg-zinc-800 border-zinc-700 text-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0"
+              />
+            </label>
+
+            <label
+              class="flex items-center justify-between p-4 bg-zinc-900/50 rounded-lg hover:bg-zinc-900/80 transition-colors cursor-pointer"
+            >
+              <div class="flex-1">
+                <div class="text-sm font-medium text-white">
+                  Sauvegarder l'historique
+                </div>
+                <div class="text-xs text-zinc-400 mt-1">
+                  Conserver l'historique des rapports
+                </div>
+              </div>
+              <input
+                v-model="settings.privacy.saveHistory"
+                type="checkbox"
+                class="w-5 h-5 rounded bg-zinc-800 border-zinc-700 text-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-offset-0"
+              />
+            </label>
+
+            <div v-if="settings.privacy.saveHistory">
+              <label class="block text-sm font-medium text-zinc-300 mb-2">
+                Suppression automatique après (jours)
+              </label>
+              <input
+                v-model.number="settings.privacy.autoDeleteAfter"
+                type="number"
+                min="30"
+                max="365"
+                class="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Status Message -->
+        <div
+          v-if="saveMessage"
+          :class="[
+            'p-4 rounded-lg border flex items-start gap-3',
+            saveStatus === 'success'
+              ? 'bg-green-500/10 border-green-500/30 text-green-400'
+              : 'bg-red-500/10 border-red-500/30 text-red-400',
+          ]"
+        >
+          <component
+            :is="saveStatus === 'success' ? CheckCircle2 : AlertCircle"
+            :size="20"
+            class="flex-shrink-0 mt-0.5"
+          />
+          <p class="text-sm">{{ saveMessage }}</p>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-between gap-4 pt-4">
           <button
             @click="resetSettings"
             class="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors"
           >
             Réinitialiser
           </button>
-        </div>
-
-        <!-- Message de sauvegarde -->
-        <div
-          v-if="saveMessage"
-          :class="[
-            'rounded-lg p-4 text-center transition-all',
-            saveMessage.includes('Erreur')
-              ? 'bg-red-500/10 border border-red-500/30 text-red-400'
-              : 'bg-green-500/10 border border-green-500/30 text-green-400',
-          ]"
-        >
-          {{ saveMessage }}
-        </div>
-
-        <!-- Zone de danger -->
-        <div class="bg-red-500/5 border border-red-500/20 rounded-lg p-6">
-          <h3 class="text-lg font-semibold text-red-400 mb-4">Zone de danger</h3>
-          <div class="space-y-4">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="font-medium">Déconnexion</p>
-                <p class="text-sm text-zinc-400">
-                  Se déconnecter de l'application
-                </p>
-              </div>
-              <button
-                @click="handleLogout"
-                class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center gap-2"
-              >
-                <LogOut :size="18" />
-                <span>Se déconnecter</span>
-              </button>
-            </div>
-          </div>
+          <button
+            @click="saveSettings"
+            :disabled="isSaving"
+            class="px-8 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-zinc-700 disabled:to-zinc-700 text-white font-medium rounded-lg transition-all duration-200 flex items-center justify-center gap-3 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/40 disabled:shadow-none"
+          >
+            <Loader2 v-if="isSaving" :size="20" class="animate-spin" />
+            <Save v-else :size="20" />
+            <span>
+              {{ isSaving ? "Sauvegarde..." : "Sauvegarder les paramètres" }}
+            </span>
+          </button>
         </div>
       </div>
-    </main>
-  </div>
+    </div>
+  </AppLayout>
 </template>
 
 <style scoped>
-/* Toggle switch personnalisé */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border-width: 0;
+/* Animation */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #52525b;
+}
+
+/* Custom checkbox and select styles */
+input[type="checkbox"] {
+  cursor: pointer;
 }
 
 select {
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23a1a1aa'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 0.75rem center;
-  background-size: 1.5em 1.5em;
-  padding-right: 2.5rem;
+  cursor: pointer;
 }
 </style>

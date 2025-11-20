@@ -49,10 +49,17 @@ export const getUserRepositories = async (
       throw new ValidationError("Utilisateur non trouvé");
     }
 
-    // Pour le moment, on utilise le token d'accès stocké lors de l'OAuth
-    // TODO: Implémenter le stockage sécurisé du token d'accès GitHub
-    // Pour cette démo, on suppose que le token est disponible
-    // Dans un vrai projet, il faudrait stocker le token de manière sécurisée
+    logger.debug("User found for repo fetch", {
+      userId: user.id,
+      hasGithubToken: !!user.githubToken,
+      tokenLength: user.githubToken?.length
+    });
+
+    if (!user.githubToken) {
+      throw new ValidationError(
+        "Token GitHub manquant. Veuillez vous reconnecter via GitHub.",
+      );
+    }
 
     // Paramètres de requête
     const page = parseInt(req.query.page as string) || 1;
@@ -60,24 +67,19 @@ export const getUserRepositories = async (
     const sort = (req.query.sort as any) || "updated";
     const direction = (req.query.direction as any) || "desc";
 
-    // Note: Pour cette version, on retourne un message indiquant qu'il faut
-    // implémenter le stockage du token GitHub
-    // Dans une vraie implémentation, on appellerait:
-    // const repositories = await GitHubService.getUserRepositories(accessToken, { page, perPage, sort, direction });
+    const repositories = await GitHubService.getUserRepositories(
+      user.githubToken,
+      { page, perPage, sort, direction },
+    );
 
-    logger.warn("GitHub token not stored - returning mock data", { userId });
-
-    // Pour le développement, retourner des données de démonstration
     res.json({
       success: true,
       data: {
-        repositories: [],
-        message:
-          "Pour récupérer vos dépôts, le token d'accès GitHub doit être stocké de manière sécurisée. Cette fonctionnalité sera implémentée dans la prochaine version.",
+        repositories,
         pagination: {
           page,
           perPage,
-          total: 0,
+          total: repositories.length, // Note: GitHub API doesn't return total count easily in this endpoint
         },
       },
       timestamp: new Date().toISOString(),
@@ -145,67 +147,30 @@ export const getRepositoryCommits = async (
       throw new ValidationError("Utilisateur non trouvé");
     }
 
-    // TODO: Implémenter la récupération réelle avec le token GitHub
-    // const commits = await GitHubService.getRepositoryCommits(accessToken, {
-    //   owner,
-    //   repo,
-    //   since,
-    //   until,
-    //   page,
-    //   perPage
-    // });
+    if (!user.githubToken) {
+      throw new ValidationError(
+        "Token GitHub manquant. Veuillez vous reconnecter via GitHub.",
+      );
+    }
 
-    logger.warn("GitHub token not stored - returning mock data", {
-      userId,
+    const commits = await GitHubService.getRepositoryCommits(user.githubToken, {
       owner,
       repo,
+      since,
+      until,
+      page,
+      perPage,
     });
-
-    // Données de démonstration basées sur la maquette
-    const mockCommits = [
-      {
-        sha: "abc123def456",
-        message: "First commit",
-        author: {
-          name: user.name || "Unknown",
-          email: user.email || "unknown@example.com",
-          date: new Date().toISOString(),
-        },
-        url: `https://github.com/${owner}/${repo}/commit/abc123def456`,
-      },
-      {
-        sha: "def456ghi789",
-        message: "Added login form",
-        author: {
-          name: user.name || "Unknown",
-          email: user.email || "unknown@example.com",
-          date: new Date(Date.now() - 3600000).toISOString(),
-        },
-        url: `https://github.com/${owner}/${repo}/commit/def456ghi789`,
-      },
-      {
-        sha: "ghi789jkl012",
-        message: "Fixed auth bug",
-        author: {
-          name: user.name || "Unknown",
-          email: user.email || "unknown@example.com",
-          date: new Date(Date.now() - 7200000).toISOString(),
-        },
-        url: `https://github.com/${owner}/${repo}/commit/ghi789jkl012`,
-      },
-    ];
 
     res.json({
       success: true,
       data: {
-        commits: mockCommits,
+        commits,
         repository: {
           owner,
           repo,
           fullName: `${owner}/${repo}`,
         },
-        message:
-          "Données de démonstration. Pour récupérer les vrais commits, configurez le stockage sécurisé du token GitHub.",
       },
       timestamp: new Date().toISOString(),
     });

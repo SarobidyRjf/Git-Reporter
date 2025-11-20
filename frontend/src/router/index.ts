@@ -53,8 +53,8 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
-    path: "/historique",
-    name: "Historique",
+    path: "/history",
+    name: "History",
     component: () => import("../views/History.vue"),
     meta: {
       requiresAuth: true,
@@ -62,8 +62,8 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
-    path: "/parametres",
-    name: "Parametres",
+    path: "/settings",
+    name: "Settings",
     component: () => import("../views/Settings.vue"),
     meta: {
       requiresAuth: true,
@@ -71,8 +71,8 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
-    path: "/profil",
-    name: "Profil",
+    path: "/profile",
+    name: "Profile",
     component: () => import("../views/Profile.vue"),
     meta: {
       requiresAuth: true,

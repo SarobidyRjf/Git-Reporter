@@ -47,6 +47,7 @@ interface EnvConfig {
     secure: boolean;
     user: string;
     password: string;
+    mock: boolean;
   };
 
   // Configuration Twilio (WhatsApp)
@@ -123,6 +124,7 @@ export const config: EnvConfig = {
     secure: process.env.EMAIL_SECURE === 'true',
     user: process.env.EMAIL_USER || '',
     password: process.env.EMAIL_PASSWORD || '',
+    mock: process.env.EMAIL_MOCK === 'true' || !process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD,
   },
 
   twilio: {

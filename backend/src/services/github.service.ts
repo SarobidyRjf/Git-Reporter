@@ -17,11 +17,11 @@
 import axios, { AxiosError } from 'axios';
 import { config } from '../config/env';
 import {
-    GetCommitsParams,
-    GitCommit,
-    GitHubAccessToken,
-    GitHubRepository,
-    GitHubUser,
+  GetCommitsParams,
+  GitCommit,
+  GitHubAccessToken,
+  GitHubRepository,
+  GitHubUser,
 } from '../types';
 import logger, { logExternalAPI } from '../utils/logger';
 
@@ -338,6 +338,12 @@ export class GitHubService {
           throw new Error(
             `Repository ${params.owner}/${params.repo} not found or you don't have access`
           );
+        }
+
+        // Cas spécifique : dépôt vide (409 Conflict)
+        if (axiosError.response?.status === 409) {
+          logger.warn('Repository is empty', { owner: params.owner, repo: params.repo });
+          return [];
         }
 
         throw new Error(

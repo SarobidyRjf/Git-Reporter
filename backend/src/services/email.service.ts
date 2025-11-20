@@ -45,31 +45,39 @@ export class EmailService {
    * Vérifie la connexion au serveur SMTP au démarrage.
    */
   constructor() {
-    this.transporter = nodemailer.createTransport({
-      host: config.email.host,
-      port: config.email.port,
-      secure: config.email.secure, // true pour 465, false pour autres ports
-      auth: {
+    if (config.email.mock) {
+      // En mode mock, on initialise un transporteur JSON qui ne fait rien
+      this.transporter = nodemailer.createTransport({
+        jsonTransport: true
+      });
+      logger.warn('⚠️ Email service initialized in MOCK MODE. Emails will be logged but NOT sent.');
+    } else {
+      this.transporter = nodemailer.createTransport({
+        host: config.email.host,
+        port: config.email.port,
+        secure: config.email.secure, // true pour 465, false pour autres ports
+        auth: {
+          user: config.email.user,
+          pass: config.email.password,
+        },
+        // Options supplémentaires pour améliorer la fiabilité
+        pool: true, // Utilise un pool de connexions
+        maxConnections: 5,
+        maxMessages: 100,
+        rateDelta: 1000, // Limite le taux d'envoi
+        rateLimit: 5, // 5 messages par seconde max
+      });
+
+      // Vérifie la connexion SMTP au démarrage
+      this.verifyConnection();
+
+      logger.info('Email service initialized', {
+        host: config.email.host,
+        port: config.email.port,
+        secure: config.email.secure,
         user: config.email.user,
-        pass: config.email.password,
-      },
-      // Options supplémentaires pour améliorer la fiabilité
-      pool: true, // Utilise un pool de connexions
-      maxConnections: 5,
-      maxMessages: 100,
-      rateDelta: 1000, // Limite le taux d'envoi
-      rateLimit: 5, // 5 messages par seconde max
-    });
-
-    // Vérifie la connexion SMTP au démarrage
-    this.verifyConnection();
-
-    logger.info('Email service initialized', {
-      host: config.email.host,
-      port: config.email.port,
-      secure: config.email.secure,
-      user: config.email.user,
-    });
+      });
+    }
   }
 
   /**
@@ -111,6 +119,21 @@ export class EmailService {
       const { to, subject, text, html } = options;
 
       logger.debug('Sending email', { to, subject });
+
+      // Mode Simulation (Mock)
+      if (config.email.mock) {
+        logger.info('📧 [MOCK EMAIL] Simulation d\'envoi d\'email', {
+          to,
+          subject,
+          text: text?.substring(0, 100) + '...',
+        });
+        console.log('---------------------------------------------------');
+        console.log(`TO: ${to}`);
+        console.log(`SUBJECT: ${subject}`);
+        console.log(`CONTENT: ${text}`);
+        console.log('---------------------------------------------------');
+        return true;
+      }
 
       // Valide l'adresse email du destinataire
       if (!this.isValidEmail(to)) {
@@ -330,9 +353,9 @@ export class EmailService {
             </div>
             <div class="timestamp">
                 Généré le ${new Date().toLocaleString('fr-FR', {
-                  dateStyle: 'full',
-                  timeStyle: 'long',
-                })}
+      dateStyle: 'full',
+      timeStyle: 'long',
+    })}
             </div>
         </div>
         <div class="footer">

@@ -16,7 +16,7 @@
 
 import { NextFunction, Request, Response } from 'express';
 import { config } from '../config/env';
-import { Prisma } from '../generated';
+import { Prisma } from '@prisma/client';
 import { ErrorResponse } from '../types';
 import logger, { logError } from '../utils/logger';
 

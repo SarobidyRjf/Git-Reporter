@@ -166,14 +166,26 @@ export const githubCallback = async (req: Request, res: Response): Promise<void>
     if (user) {
       // Met à jour les informations utilisateur
       logger.debug('Updating existing user', { userId: user.id });
+      logger.debug('GitHub Token to save', {
+        tokenPrefix: accessToken.substring(0, 10),
+        tokenLength: accessToken.length
+      });
 
       user = await prisma.user.update({
         where: { id: user.id },
         data: {
-          name: githubUser.name,
+          name: githubUser.name || githubUser.login,
           email: githubUser.email,
           avatarUrl: githubUser.avatar_url,
+          githubToken: accessToken,
         },
+      });
+
+      // VERIFICATION IMMEDIATE
+      const verifyUser = await prisma.user.findUnique({ where: { id: user.id } });
+      logger.debug('IMMEDIATE VERIFICATION', {
+        savedToken: !!verifyUser?.githubToken,
+        savedTokenLength: verifyUser?.githubToken?.length
       });
 
       logDatabase('UPDATE', 'User', { userId: user.id });
@@ -181,14 +193,26 @@ export const githubCallback = async (req: Request, res: Response): Promise<void>
     } else {
       // Crée un nouvel utilisateur
       logger.debug('Creating new user', { githubId: githubUser.id });
+      logger.debug('GitHub Token to save', {
+        tokenPrefix: accessToken.substring(0, 10),
+        tokenLength: accessToken.length
+      });
 
       user = await prisma.user.create({
         data: {
           githubId: githubUser.id.toString(),
-          name: githubUser.name,
+          name: githubUser.name || githubUser.login,
           email: githubUser.email,
           avatarUrl: githubUser.avatar_url,
+          githubToken: accessToken,
         },
+      });
+
+      // VERIFICATION IMMEDIATE
+      const verifyUser = await prisma.user.findUnique({ where: { id: user.id } });
+      logger.debug('IMMEDIATE VERIFICATION', {
+        savedToken: !!verifyUser?.githubToken,
+        savedTokenLength: verifyUser?.githubToken?.length
       });
 
       logDatabase('CREATE', 'User', { userId: user.id });
