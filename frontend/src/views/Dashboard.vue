@@ -36,7 +36,8 @@ const authStore = useAuthStore();
 const isLoadingRepos = ref(false);
 const isLoadingCommits = ref(false);
 const isSendingReport = ref(false);
-const repositories = ref<Repository[]>([]);
+const allUserRepositories = ref<Repository[]>([]); // Tous les dépôts (pour la recherche)
+const repositories = ref<Repository[]>([]); // Dépôts filtrés (pour le select)
 const selectedRepo = ref<Repository | null>(null);
 const commits = ref<any[]>([]);
 const reportContent = ref("");
@@ -44,6 +45,10 @@ const sendMethod = ref<"email" | "whatsapp">("email");
 const recipient = ref("");
 const statusMessage = ref("");
 const statusType = ref<"success" | "error" | "">("");
+
+// Search Mode
+const isSearchMode = ref(false);
+const repoSearchQuery = ref("");
 
 // Computed
 const selectedCommits = computed(() => {
@@ -87,7 +92,17 @@ async function loadRepositories() {
   try {
     const response = await api.getUserRepositories();
     if (response.success && response.data) {
-      repositories.value = response.data.repositories;
+      const fullList = response.data.repositories;
+      allUserRepositories.value = fullList;
+
+      let filteredRepos = fullList;
+
+      // Filtrer selon les préférences utilisateur
+      if (authStore.user?.visibleRepos) {
+        filteredRepos = filteredRepos.filter(repo => authStore.user!.visibleRepos!.includes(repo.name));
+      }
+
+      repositories.value = filteredRepos;
       
       // Sélectionner le premier repo par défaut s'il y en a
       if (repositories.value.length > 0 && !selectedRepo.value) {
@@ -141,6 +156,37 @@ function selectAllCommits() {
   const allSelected = commits.value.every((c) => c.selected);
   commits.value.forEach((c) => (c.selected = !allSelected));
   updateReportContent();
+}
+
+// Search Logic
+const isValidRepo = computed(() => {
+  if (!repoSearchQuery.value) return false;
+  return allUserRepositories.value.some(r => 
+    r.name.toLowerCase() === repoSearchQuery.value.toLowerCase() || 
+    r.full_name.toLowerCase() === repoSearchQuery.value.toLowerCase()
+  );
+});
+
+function toggleSearchMode() {
+  isSearchMode.value = !isSearchMode.value;
+  if (!isSearchMode.value) {
+    repoSearchQuery.value = "";
+  } else if (selectedRepo.value) {
+    repoSearchQuery.value = selectedRepo.value.name;
+  }
+}
+
+function handleRepoSearch() {
+  if (!repoSearchQuery.value) return;
+  
+  const foundRepo = allUserRepositories.value.find(r => 
+    r.name.toLowerCase() === repoSearchQuery.value.toLowerCase() || 
+    r.full_name.toLowerCase() === repoSearchQuery.value.toLowerCase()
+  );
+
+  if (foundRepo) {
+    selectedRepo.value = foundRepo;
+  }
 }
 
 function formatDate(dateString: string | Date) {
@@ -238,21 +284,72 @@ async function sendReport() {
               </button>
             </div>
 
-            <!-- Repository Selector -->
-            <div class="relative">
-              <select
-                v-model="selectedRepo"
-                class="w-full appearance-none bg-zinc-800 border border-zinc-700 text-white py-2.5 px-4 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 cursor-pointer"
-                :disabled="isLoadingRepos"
-              >
-                <option :value="null" disabled>Choisir un dépôt...</option>
-                <option v-for="repo in repositories" :key="repo.id" :value="repo">
-                  {{ repo.full_name }}
-                </option>
-              </select>
-              <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-zinc-400">
-                <Loader2 v-if="isLoadingRepos" :size="16" class="animate-spin" />
-                <ChevronDown v-else :size="16" />
+            <!-- Repository Selector / Search -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="text-sm font-medium text-zinc-300">
+                  Dépôt
+                </label>
+                <button 
+                  @click="toggleSearchMode"
+                  class="text-xs flex items-center gap-1 text-purple-400 hover:text-purple-300 transition-colors"
+                >
+                  <component :is="isSearchMode ? ChevronDown : Search" :size="14" />
+                  <span>{{ isSearchMode ? 'Sélectionner dans la liste' : 'Rechercher par nom' }}</span>
+                </button>
+              </div>
+
+              <div v-if="isSearchMode" class="relative">
+                <div class="relative">
+                  <Search :size="18" class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+                  <input
+                    v-model="repoSearchQuery"
+                    @input="handleRepoSearch"
+                    type="text"
+                    placeholder="Rechercher un dépôt (ex: mon-projet)"
+                    :class="[
+                      'w-full pl-10 pr-4 py-3 bg-zinc-900 border rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 transition-all',
+                      repoSearchQuery 
+                        ? (isValidRepo ? 'border-green-500/50 focus:border-green-500 focus:ring-green-500/20' : 'border-red-500/50 focus:border-red-500 focus:ring-red-500/20')
+                        : 'border-zinc-800 focus:border-purple-500 focus:ring-purple-500/50'
+                    ]"
+                  />
+                  <div v-if="repoSearchQuery" class="absolute right-3 top-1/2 -translate-y-1/2">
+                    <CheckCircle2 v-if="isValidRepo" :size="18" class="text-green-500" />
+                    <AlertCircle v-else :size="18" class="text-red-500" />
+                  </div>
+                </div>
+                <div v-if="repoSearchQuery && !isValidRepo" class="mt-1 text-xs text-red-400">
+                  Dépôt non trouvé dans vos dépôts visibles
+                </div>
+              </div>
+
+              <div v-else class="relative">
+                <GitBranch
+                  :size="18"
+                  class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
+                />
+                <select
+                  v-model="selectedRepo"
+                  class="w-full pl-10 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white appearance-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+                  :disabled="isLoadingRepos"
+                >
+                  <option :value="null" disabled>
+                    {{ isLoadingRepos ? "Chargement..." : "Sélectionner un dépôt" }}
+                  </option>
+                  <option
+                    v-for="repo in repositories"
+                    :key="repo.id"
+                    :value="repo"
+                  >
+                    {{ repo.full_name }}
+                  </option>
+                </select>
+                <div
+                  class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                >
+                  <ChevronDown :size="16" class="text-zinc-500" />
+                </div>
               </div>
             </div>
           </div>

@@ -176,6 +176,14 @@ class ApiService {
   }
 
   /**
+   * Met à jour les paramètres utilisateur
+   */
+  async updateUserSettings(settings: { visibleRepos?: string[], settings?: any }): Promise<ApiResponse<User>> {
+    const response = await this.api.put<ApiResponse<User>>("/api/user/settings", settings);
+    return response.data;
+  }
+
+  /**
    * Déconnexion
    */
   async logout(): Promise<ApiResponse> {

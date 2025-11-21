@@ -21,6 +21,7 @@ import {
   Github,
   ChevronDown
 } from 'lucide-vue-next';
+import Toast from './ui/Toast.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -227,6 +228,9 @@ const handleLogout = async () => {
         </div>
       </main>
     </div>
+    
+    <!-- Toast Notifications -->
+    <Toast />
   </div>
 </template>
 

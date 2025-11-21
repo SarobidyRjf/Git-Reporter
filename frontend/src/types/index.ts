@@ -16,6 +16,7 @@ export interface User {
   email: string | null;
   avatarUrl: string | null;
   reportsCount?: number;
+  visibleRepos?: string[];
 }
 
 /**

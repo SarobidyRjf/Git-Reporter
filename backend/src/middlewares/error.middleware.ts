@@ -194,7 +194,9 @@ export const errorHandler = (
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     error = handlePrismaError(err);
   } else if (err instanceof Prisma.PrismaClientValidationError) {
-    error = new ValidationError('Erreur de validation des données');
+    logger.error('Prisma Validation Error:', { message: err.message });
+    // Include the original message for debugging purposes
+    error = new ValidationError(`Erreur de validation Prisma: ${err.message}`);
   } else if (err instanceof Prisma.PrismaClientInitializationError) {
     error = {
       name: 'DatabaseConnectionError',

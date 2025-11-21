@@ -266,6 +266,8 @@ export const getCurrentUser = async (req: AuthenticatedRequest, res: Response): 
         name: true,
         email: true,
         avatarUrl: true,
+        visibleRepos: true,
+        settings: true,
         _count: {
           select: { reports: true },
         },
@@ -286,6 +288,8 @@ export const getCurrentUser = async (req: AuthenticatedRequest, res: Response): 
         name: user.name,
         email: user.email,
         avatarUrl: user.avatarUrl,
+        visibleRepos: user.visibleRepos,
+        settings: user.settings,
         reportsCount: user._count.reports,
       },
       timestamp: new Date().toISOString(),

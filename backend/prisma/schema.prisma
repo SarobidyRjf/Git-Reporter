@@ -19,6 +19,8 @@ model User {
   email       String?
   avatarUrl   String?
   githubToken String?
+  visibleRepos String[] @default([])
+  settings    Json?
   reports     Report[]
 }
 

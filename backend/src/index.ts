@@ -21,6 +21,7 @@ import cors from "cors";
 import express, { Application } from "express";
 import { config } from "./config/env";
 import prisma from "./db";
+
 import {
   errorHandler,
   initializeErrorHandlers,
@@ -34,6 +35,7 @@ import {
 import authRoutes from "./routes/auth.routes";
 import githubRoutes from "./routes/github.routes";
 import reportsRoutes from "./routes/reports.routes";
+import userRoutes from "./routes/user.routes";
 import logger from "./utils/logger";
 
 /**
@@ -164,6 +166,11 @@ const initializeApp = (): Application => {
    * Routes de gestion des rapports
    */
   app.use("/api/reports", reportsRoutes);
+
+  /**
+   * Routes de gestion utilisateur
+   */
+  app.use("/api/user", userRoutes);
 
   /**
    * Routes de test pour l'envoi d'emails et WhatsApp
@@ -344,3 +351,5 @@ startServer();
 
 // Export de l'application pour les tests
 export default initializeApp;
+
+// Force restart for Prisma Client update
