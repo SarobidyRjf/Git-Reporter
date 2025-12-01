@@ -17,6 +17,8 @@ export interface User {
   avatarUrl: string | null;
   reportsCount?: number;
   visibleRepos?: string[];
+  settings?: any;
+  createdAt?: string;
 }
 
 /**

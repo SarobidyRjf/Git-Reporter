@@ -27,7 +27,7 @@ import {
   Loader2,
   Search,
   Plus,
-  X
+  X,
 } from "lucide-vue-next";
 import AppLayout from "../components/AppLayout.vue";
 
@@ -54,12 +54,14 @@ const searchQuery = ref("");
 // Computed for Dual List
 const availableRepos = computed(() => {
   return repos.value
-    .filter(r => !selectedRepos.value.includes(r.name))
-    .filter(r => r.name.toLowerCase().includes(searchQuery.value.toLowerCase()));
+    .filter((r) => !selectedRepos.value.includes(r.name))
+    .filter((r) =>
+      r.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+    );
 });
 
 const selectedReposList = computed(() => {
-  return repos.value.filter(r => selectedRepos.value.includes(r.name));
+  return repos.value.filter((r) => selectedRepos.value.includes(r.name));
 });
 
 // Settings
@@ -112,13 +114,16 @@ async function loadRepos() {
     if (response.success && response.data) {
       // Correction: Accéder à response.data.repositories
       repos.value = response.data.repositories || [];
-      
+
       // Initialiser les repos sélectionnés
-      if (authStore.user?.visibleRepos && Array.isArray(authStore.user.visibleRepos)) {
+      if (
+        authStore.user?.visibleRepos &&
+        Array.isArray(authStore.user.visibleRepos)
+      ) {
         selectedRepos.value = [...authStore.user.visibleRepos];
       } else {
         // Par défaut, tout sélectionner si aucune préférence
-        selectedRepos.value = repos.value.map(r => r.name);
+        selectedRepos.value = repos.value.map((r) => r.name);
       }
     }
   } catch (error) {
@@ -128,7 +133,6 @@ async function loadRepos() {
   }
 }
 
-
 function addRepo(repoName: string) {
   if (!selectedRepos.value.includes(repoName)) {
     selectedRepos.value.push(repoName);
@@ -136,11 +140,11 @@ function addRepo(repoName: string) {
 }
 
 function removeRepo(repoName: string) {
-  selectedRepos.value = selectedRepos.value.filter(name => name !== repoName);
+  selectedRepos.value = selectedRepos.value.filter((name) => name !== repoName);
 }
 
 function addAllFiltered() {
-  const newRepos = availableRepos.value.map(r => r.name);
+  const newRepos = availableRepos.value.map((r) => r.name);
   selectedRepos.value = [...selectedRepos.value, ...newRepos];
 }
 
@@ -153,10 +157,11 @@ function loadSettings() {
   if (authStore.user?.settings) {
     try {
       // Si settings est une string (JSON), on parse, sinon on utilise direct
-      const userSettings = typeof authStore.user.settings === 'string' 
-        ? JSON.parse(authStore.user.settings) 
-        : authStore.user.settings;
-        
+      const userSettings =
+        typeof authStore.user.settings === "string"
+          ? JSON.parse(authStore.user.settings)
+          : authStore.user.settings;
+
       settings.value = { ...settings.value, ...userSettings };
       return;
     } catch (e) {
@@ -182,15 +187,17 @@ async function saveSettings() {
     // 1. Sauvegarder les paramètres locaux (backup)
     localStorage.setItem(
       "git-reporter-settings",
-      JSON.stringify(settings.value),
+      JSON.stringify(settings.value)
     );
 
     // 2. Sauvegarder sur le serveur
-    const reposToSave = Array.isArray(selectedRepos.value) ? [...selectedRepos.value] : [];
-    
+    const reposToSave = Array.isArray(selectedRepos.value)
+      ? [...selectedRepos.value]
+      : [];
+
     const response = await apiService.updateUserSettings({
       visibleRepos: reposToSave,
-      settings: settings.value // Envoi de tous les settings
+      settings: settings.value, // Envoi de tous les settings
     });
 
     if (!response.success) {
@@ -208,20 +215,80 @@ async function saveSettings() {
 
     success("Paramètres sauvegardés avec succès !");
   } catch (err: any) {
-    console.error('Erreur sauvegarde:', err);
+    console.error("Erreur sauvegarde:", err);
     error("Erreur lors de la sauvegarde des paramètres");
   } finally {
     isSaving.value = false;
   }
 }
 
-function resetSettings() {
+async function resetSettings() {
   if (confirm("Êtes-vous sûr de vouloir réinitialiser tous les paramètres ?")) {
-    localStorage.removeItem("git-reporter-settings");
-    loadSettings();
-    // Réinitialiser aussi les repos
-    selectedRepos.value = repos.value.map(r => r.name);
-    success("Paramètres réinitialisés");
+    try {
+      isSaving.value = true;
+
+      // 1. Nettoyer le localStorage
+      localStorage.removeItem("git-reporter-settings");
+
+      // 2. Réinitialiser l'état local
+      settings.value = {
+        notifications: {
+          emailReports: true,
+          reportSent: true,
+          reportFailed: true,
+          weeklyDigest: false,
+        },
+        email: {
+          defaultRecipient: "",
+          ccMyself: true,
+          signatureEnabled: true,
+          signature: "Envoyé depuis Git Reporter",
+        },
+        whatsapp: {
+          defaultNumber: "",
+          includeTimestamp: true,
+          formatMarkdown: true,
+        },
+        github: {
+          autoFetchCommits: true,
+          defaultBranch: "main",
+          includeAuthorInfo: true,
+          maxCommits: 50,
+        },
+        appearance: {
+          theme: "dark",
+          language: "fr",
+          dateFormat: "DD/MM/YYYY",
+        },
+        privacy: {
+          shareAnalytics: false,
+          saveHistory: true,
+          autoDeleteAfter: 90,
+        },
+      };
+
+      // Réinitialiser les repos (tout sélectionner par défaut)
+      selectedRepos.value = repos.value.map((r) => r.name);
+
+      // 3. Sauvegarder l'état réinitialisé sur le serveur
+      await apiService.updateUserSettings({
+        visibleRepos: selectedRepos.value,
+        settings: settings.value,
+      });
+
+      // Mettre à jour le store
+      if (authStore.user) {
+        authStore.user.visibleRepos = selectedRepos.value;
+        authStore.user.settings = settings.value;
+      }
+
+      success("Paramètres réinitialisés avec succès");
+    } catch (err) {
+      console.error("Erreur lors de la réinitialisation:", err);
+      error("Erreur lors de la réinitialisation des paramètres");
+    } finally {
+      isSaving.value = false;
+    }
   }
 }
 </script>
@@ -305,7 +372,9 @@ function resetSettings() {
                 class="flex items-center justify-between p-4 bg-zinc-900/50 rounded-lg hover:bg-zinc-900/80 transition-colors cursor-pointer"
               >
                 <div class="flex-1">
-                  <div class="text-sm font-medium text-white">Échec d'envoi</div>
+                  <div class="text-sm font-medium text-white">
+                    Échec d'envoi
+                  </div>
                   <div class="text-xs text-zinc-400 mt-1">
                     Alertes en cas d'erreur d'envoi
                   </div>
@@ -349,7 +418,9 @@ function resetSettings() {
                 <h2 class="text-lg font-semibold text-white">
                   Configuration Email
                 </h2>
-                <p class="text-sm text-zinc-400">Paramètres d'envoi par email</p>
+                <p class="text-sm text-zinc-400">
+                  Paramètres d'envoi par email
+                </p>
               </div>
             </div>
 
@@ -485,8 +556,6 @@ function resetSettings() {
             </div>
           </div>
 
-
-
           <!-- Repository Management (Dual List) -->
           <div class="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
             <div class="flex items-center gap-3 mb-6">
@@ -511,11 +580,15 @@ function resetSettings() {
 
             <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <!-- Available Repos -->
-              <div class="flex flex-col h-[400px] bg-zinc-900/30 border border-zinc-800 rounded-lg overflow-hidden">
+              <div
+                class="flex flex-col h-[400px] bg-zinc-900/30 border border-zinc-800 rounded-lg overflow-hidden"
+              >
                 <div class="p-3 border-b border-zinc-800 bg-zinc-900/50">
                   <div class="flex items-center justify-between mb-2">
-                    <span class="text-sm font-medium text-zinc-300">Disponibles ({{ availableRepos.length }})</span>
-                    <button 
+                    <span class="text-sm font-medium text-zinc-300"
+                      >Disponibles ({{ availableRepos.length }})</span
+                    >
+                    <button
                       @click="addAllFiltered"
                       class="text-xs text-purple-400 hover:text-purple-300"
                       v-if="availableRepos.length > 0"
@@ -524,45 +597,70 @@ function resetSettings() {
                     </button>
                   </div>
                   <div class="relative">
-                    <Search :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
-                    <input 
+                    <Search
+                      :size="14"
+                      class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
+                    />
+                    <input
                       v-model="searchQuery"
-                      type="text" 
-                      placeholder="Rechercher..." 
+                      type="text"
+                      placeholder="Rechercher..."
                       class="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-1.5 pl-9 text-sm text-white focus:outline-none focus:border-purple-500/50"
                     />
                   </div>
                 </div>
-                
-                <div class="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
-                  <div 
-                    v-for="repo in availableRepos" 
+
+                <div
+                  class="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar"
+                >
+                  <div
+                    v-for="repo in availableRepos"
                     :key="repo.id"
                     class="flex items-center justify-between p-2 rounded hover:bg-zinc-800/50 group transition-colors"
                   >
                     <div class="min-w-0">
-                      <div class="text-sm text-zinc-200 truncate">{{ repo.name }}</div>
-                      <div class="text-[10px] text-zinc-500 truncate" v-if="repo.description">{{ repo.description }}</div>
+                      <div class="text-sm text-zinc-200 truncate">
+                        {{ repo.name }}
+                      </div>
+                      <div
+                        class="text-[10px] text-zinc-500 truncate"
+                        v-if="repo.description"
+                      >
+                        {{ repo.description }}
+                      </div>
                     </div>
-                    <button 
+                    <button
                       @click="addRepo(repo.name)"
                       class="p-1.5 rounded bg-zinc-800 hover:bg-purple-500/20 text-zinc-400 hover:text-purple-400 transition-colors opacity-0 group-hover:opacity-100"
                     >
                       <Plus :size="14" />
                     </button>
                   </div>
-                  
-                  <div v-if="availableRepos.length === 0" class="text-center py-8 text-zinc-500 text-sm">
-                    {{ searchQuery ? 'Aucun résultat' : 'Tous les dépôts sont sélectionnés' }}
+
+                  <div
+                    v-if="availableRepos.length === 0"
+                    class="text-center py-8 text-zinc-500 text-sm"
+                  >
+                    {{
+                      searchQuery
+                        ? "Aucun résultat"
+                        : "Tous les dépôts sont sélectionnés"
+                    }}
                   </div>
                 </div>
               </div>
 
               <!-- Selected Repos -->
-              <div class="flex flex-col h-[400px] bg-zinc-900/30 border border-zinc-800 rounded-lg overflow-hidden">
-                <div class="p-3 border-b border-zinc-800 bg-zinc-900/50 flex items-center justify-between h-[69px]">
-                  <span class="text-sm font-medium text-zinc-300">Sélectionnés ({{ selectedRepos.length }})</span>
-                  <button 
+              <div
+                class="flex flex-col h-[400px] bg-zinc-900/30 border border-zinc-800 rounded-lg overflow-hidden"
+              >
+                <div
+                  class="p-3 border-b border-zinc-800 bg-zinc-900/50 flex items-center justify-between h-[69px]"
+                >
+                  <span class="text-sm font-medium text-zinc-300"
+                    >Sélectionnés ({{ selectedRepos.length }})</span
+                  >
+                  <button
                     @click="removeAll"
                     class="text-xs text-red-400 hover:text-red-300"
                     v-if="selectedRepos.length > 0"
@@ -570,17 +668,21 @@ function resetSettings() {
                     Tout retirer
                   </button>
                 </div>
-                
-                <div class="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
-                   <div 
-                    v-for="repo in selectedReposList" 
+
+                <div
+                  class="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar"
+                >
+                  <div
+                    v-for="repo in selectedReposList"
                     :key="repo.id"
                     class="flex items-center justify-between p-2 rounded bg-purple-500/5 border border-purple-500/10 group transition-colors"
                   >
                     <div class="min-w-0">
-                      <div class="text-sm text-zinc-200 truncate">{{ repo.name }}</div>
+                      <div class="text-sm text-zinc-200 truncate">
+                        {{ repo.name }}
+                      </div>
                     </div>
-                    <button 
+                    <button
                       @click="removeRepo(repo.name)"
                       class="p-1.5 rounded hover:bg-red-500/20 text-zinc-400 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
                     >
@@ -588,7 +690,10 @@ function resetSettings() {
                     </button>
                   </div>
 
-                  <div v-if="selectedRepos.length === 0" class="text-center py-8 text-zinc-500 text-sm">
+                  <div
+                    v-if="selectedRepos.length === 0"
+                    class="text-center py-8 text-zinc-500 text-sm"
+                  >
                     Aucun dépôt sélectionné
                   </div>
                 </div>
@@ -746,7 +851,9 @@ function resetSettings() {
                 <Lock :size="20" class="text-red-400" />
               </div>
               <div>
-                <h2 class="text-lg font-semibold text-white">Confidentialité</h2>
+                <h2 class="text-lg font-semibold text-white">
+                  Confidentialité
+                </h2>
                 <p class="text-sm text-zinc-400">
                   Gérez vos données personnelles
                 </p>
@@ -804,27 +911,12 @@ function resetSettings() {
               </div>
             </div>
           </div>
-
-          <!-- Status Message -->
-          <div
-            v-if="saveMessage"
-            :class="[
-              'p-4 rounded-lg border flex items-start gap-3',
-              saveStatus === 'success'
-                ? 'bg-green-500/10 border-green-500/30 text-green-400'
-                : 'bg-red-500/10 border-red-500/30 text-red-400',
-            ]"
-          >
-            <component
-              :is="saveStatus === 'success' ? CheckCircle2 : AlertCircle"
-              :size="20"
-              class="flex-shrink-0 mt-0.5"
-            />
         </div>
-      </div>
 
         <!-- Actions -->
-        <div class="fixed bottom-0 left-0 lg:left-64 right-0 p-4 bg-zinc-900/95 backdrop-blur-xl border-t border-zinc-800 flex items-center justify-between z-10">
+        <div
+          class="fixed bottom-0 left-0 lg:left-64 right-0 p-4 bg-zinc-900/95 backdrop-blur-xl border-t border-zinc-800 flex items-center justify-between z-10"
+        >
           <button
             @click="resetSettings"
             class="px-4 py-2 text-sm font-medium text-red-400 hover:text-red-300 transition-colors"

@@ -25,7 +25,7 @@ import {
   User as UserIcon,
   Hash,
   ChevronDown,
-  Search
+  Search,
 } from "lucide-vue-next";
 import AppLayout from "../components/AppLayout.vue";
 
@@ -87,7 +87,26 @@ watch(selectedRepo, (newRepo) => {
   }
 });
 
+// Watcher pour mettre à jour le destinataire par défaut quand la méthode change
+watch(sendMethod, (newMethod) => {
+  console.log("📧 Changement de méthode d'envoi:", newMethod);
+  if (authStore.user?.settings) {
+    if (newMethod === "email") {
+      const defaultEmail =
+        authStore.user.settings.email?.defaultRecipient || "";
+      console.log("⚙️ Email Setting - defaultRecipient:", defaultEmail);
+      recipient.value = defaultEmail;
+    } else {
+      const defaultNumber =
+        authStore.user.settings.whatsapp?.defaultNumber || "";
+      console.log("⚙️ WhatsApp Setting - defaultNumber:", defaultNumber);
+      recipient.value = defaultNumber;
+    }
+  }
+});
+
 async function loadRepositories() {
+  console.log("📦 Chargement des dépôts...");
   isLoadingRepos.value = true;
   try {
     const response = await api.getUserRepositories();
@@ -99,14 +118,26 @@ async function loadRepositories() {
 
       // Filtrer selon les préférences utilisateur
       if (authStore.user?.visibleRepos) {
-        filteredRepos = filteredRepos.filter(repo => authStore.user!.visibleRepos!.includes(repo.name));
+        filteredRepos = filteredRepos.filter((repo) =>
+          authStore.user!.visibleRepos!.includes(repo.name)
+        );
       }
 
       repositories.value = filteredRepos;
-      
+
       // Sélectionner le premier repo par défaut s'il y en a
       if (repositories.value.length > 0 && !selectedRepo.value) {
         selectedRepo.value = repositories.value[0] ?? null;
+
+        // Auto-fetch commits si activé dans les paramètres
+        const autoFetch = authStore.user?.settings?.github?.autoFetchCommits;
+        console.log("⚙️ GitHub Setting - autoFetchCommits:", autoFetch);
+        if (autoFetch && selectedRepo.value) {
+          console.log("✅ Auto-fetch activé - Chargement des commits...");
+          await loadCommits(selectedRepo.value);
+        } else {
+          console.log("❌ Auto-fetch désactivé");
+        }
       }
     }
   } catch (error) {
@@ -120,17 +151,29 @@ async function loadRepositories() {
 
 async function loadCommits(repo: Repository) {
   if (!repo) return;
-  
+
+  console.log("📝 Chargement des commits pour:", repo.name);
   isLoadingCommits.value = true;
   commits.value = [];
-  
+
   try {
-    const response = await api.getRepositoryCommits(repo.owner.login, repo.name);
+    // Utiliser les paramètres GitHub de l'utilisateur
+    const maxCommits = authStore.user?.settings?.github?.maxCommits || 50;
+    console.log("⚙️ GitHub Setting - maxCommits:", maxCommits);
+
+    const response = await api.getRepositoryCommits(
+      repo.owner.login,
+      repo.name,
+      {
+        perPage: maxCommits,
+      }
+    );
+
     if (response.success && response.data) {
       // Ajouter la propriété selected aux commits
       commits.value = response.data.commits.map((c: any) => ({
         ...c,
-        selected: false
+        selected: false,
       }));
     }
   } catch (error) {
@@ -143,8 +186,21 @@ async function loadCommits(repo: Repository) {
 }
 
 function updateReportContent() {
-  const repoName = selectedRepo.value ? selectedRepo.value.full_name : "Dépôt inconnu";
-  reportContent.value = `Rapport de commits - ${repoName}\n\nCommits sélectionnés:\n${selectedCommitsText.value}\n\n---\n\nDétails du rapport:\n`;
+  const repoName = selectedRepo.value
+    ? selectedRepo.value.full_name
+    : "Dépôt inconnu";
+  let content = `Rapport de commits - ${repoName}\n\nCommits sélectionnés:\n${selectedCommitsText.value}\n\n---\n\nDétails du rapport:\n`;
+
+  // Ajouter la signature si activée et méthode email
+  const signatureEnabled = authStore.user?.settings?.email?.signatureEnabled;
+  console.log("⚙️ Email Setting - signatureEnabled:", signatureEnabled);
+  if (sendMethod.value === "email" && signatureEnabled) {
+    const signature = authStore.user.settings.email.signature;
+    console.log("✅ Ajout de la signature:", signature);
+    content += `\n\n--\n${signature}`;
+  }
+
+  reportContent.value = content;
 }
 
 function toggleCommit(commit: any) {
@@ -161,9 +217,10 @@ function selectAllCommits() {
 // Search Logic
 const isValidRepo = computed(() => {
   if (!repoSearchQuery.value) return false;
-  return allUserRepositories.value.some(r => 
-    r.name.toLowerCase() === repoSearchQuery.value.toLowerCase() || 
-    r.full_name.toLowerCase() === repoSearchQuery.value.toLowerCase()
+  return allUserRepositories.value.some(
+    (r) =>
+      r.name.toLowerCase() === repoSearchQuery.value.toLowerCase() ||
+      r.full_name.toLowerCase() === repoSearchQuery.value.toLowerCase()
   );
 });
 
@@ -178,10 +235,11 @@ function toggleSearchMode() {
 
 function handleRepoSearch() {
   if (!repoSearchQuery.value) return;
-  
-  const foundRepo = allUserRepositories.value.find(r => 
-    r.name.toLowerCase() === repoSearchQuery.value.toLowerCase() || 
-    r.full_name.toLowerCase() === repoSearchQuery.value.toLowerCase()
+
+  const foundRepo = allUserRepositories.value.find(
+    (r) =>
+      r.name.toLowerCase() === repoSearchQuery.value.toLowerCase() ||
+      r.full_name.toLowerCase() === repoSearchQuery.value.toLowerCase()
   );
 
   if (foundRepo) {
@@ -202,11 +260,23 @@ function formatDate(dateString: string | Date) {
   if (diffInSeconds < 604800)
     return `Il y a ${Math.floor(diffInSeconds / 86400)}j`;
 
-  return date.toLocaleDateString("fr-FR", {
-    day: "numeric",
-    month: "short",
-    year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
-  });
+  // Utiliser le format préféré si disponible
+  const format =
+    authStore.user?.settings?.appearance?.dateFormat || "DD/MM/YYYY";
+  console.log("⚙️ Appearance Setting - dateFormat:", format);
+
+  const day = date.getDate().toString().padStart(2, "0");
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const year = date.getFullYear();
+
+  if (format === "MM/DD/YYYY") {
+    return `${month}/${day}/${year}`;
+  } else if (format === "YYYY-MM-DD") {
+    return `${year}-${month}-${day}`;
+  }
+
+  // Default DD/MM/YYYY
+  return `${day}/${month}/${year}`;
 }
 
 async function sendReport() {
@@ -217,15 +287,45 @@ async function sendReport() {
   statusType.value = "";
 
   try {
+    // Préparer le contenu pour WhatsApp si nécessaire
+    let finalContent = reportContent.value;
+
+    if (sendMethod.value === "whatsapp" && authStore.user?.settings?.whatsapp) {
+      const waSettings = authStore.user.settings.whatsapp;
+      console.log("⚙️ WhatsApp Settings:", waSettings);
+
+      // Ajouter timestamp si demandé
+      if (waSettings.includeTimestamp) {
+        console.log("✅ WhatsApp - Ajout du timestamp");
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString("fr-FR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        const dateStr = now.toLocaleDateString("fr-FR");
+        finalContent = `📅 ${dateStr} ${timeStr}\n\n${finalContent}`;
+      }
+
+      // Formater en Markdown si demandé
+      if (waSettings.formatMarkdown) {
+        console.log("✅ WhatsApp - Format Markdown activé");
+        // WhatsApp supporte le Markdown basique: *gras*, _italique_, ~barré~, ```code```
+        // Le contenu est déjà formaté, on s'assure juste qu'il est bien structuré
+        finalContent = finalContent.trim();
+      }
+    }
+
     await api.createReport({
       repoName: selectedRepo.value.full_name,
-      content: reportContent.value,
+      content: finalContent,
       method: sendMethod.value,
       sentTo: recipient.value,
     });
 
     statusType.value = "success";
-    statusMessage.value = `✓ Rapport envoyé avec succès ${sendMethod.value === "email" ? "par email" : "via WhatsApp"} !`;
+    statusMessage.value = `✓ Rapport envoyé avec succès ${
+      sendMethod.value === "email" ? "par email" : "via WhatsApp"
+    } !`;
 
     // Reset form
     setTimeout(() => {
@@ -236,7 +336,9 @@ async function sendReport() {
     }, 3000);
   } catch (error: any) {
     statusType.value = "error";
-    statusMessage.value = `✗ Erreur: ${error.response?.data?.message || "Impossible d'envoyer le rapport"}`;
+    statusMessage.value = `✗ Erreur: ${
+      error.response?.data?.message || "Impossible d'envoyer le rapport"
+    }`;
   } finally {
     isSendingReport.value = false;
   }
@@ -261,13 +363,11 @@ async function sendReport() {
                   <GitBranch :size="20" class="text-purple-400" />
                 </div>
                 <div>
-                  <h2 class="text-lg font-semibold text-white">
-                    Commits
-                  </h2>
+                  <h2 class="text-lg font-semibold text-white">Commits</h2>
                   <p class="text-sm text-zinc-400">Sélectionnez un dépôt</p>
                 </div>
               </div>
-              
+
               <button
                 @click="selectedRepo && loadCommits(selectedRepo)"
                 :disabled="isLoadingCommits || !selectedRepo"
@@ -287,21 +387,29 @@ async function sendReport() {
             <!-- Repository Selector / Search -->
             <div class="space-y-2">
               <div class="flex items-center justify-between">
-                <label class="text-sm font-medium text-zinc-300">
-                  Dépôt
-                </label>
-                <button 
+                <label class="text-sm font-medium text-zinc-300"> Dépôt </label>
+                <button
                   @click="toggleSearchMode"
                   class="text-xs flex items-center gap-1 text-purple-400 hover:text-purple-300 transition-colors"
                 >
-                  <component :is="isSearchMode ? ChevronDown : Search" :size="14" />
-                  <span>{{ isSearchMode ? 'Sélectionner dans la liste' : 'Rechercher par nom' }}</span>
+                  <component
+                    :is="isSearchMode ? ChevronDown : Search"
+                    :size="14"
+                  />
+                  <span>{{
+                    isSearchMode
+                      ? "Sélectionner dans la liste"
+                      : "Rechercher par nom"
+                  }}</span>
                 </button>
               </div>
 
               <div v-if="isSearchMode" class="relative">
                 <div class="relative">
-                  <Search :size="18" class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+                  <Search
+                    :size="18"
+                    class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
+                  />
                   <input
                     v-model="repoSearchQuery"
                     @input="handleRepoSearch"
@@ -309,17 +417,29 @@ async function sendReport() {
                     placeholder="Rechercher un dépôt (ex: mon-projet)"
                     :class="[
                       'w-full pl-10 pr-4 py-3 bg-zinc-900 border rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 transition-all',
-                      repoSearchQuery 
-                        ? (isValidRepo ? 'border-green-500/50 focus:border-green-500 focus:ring-green-500/20' : 'border-red-500/50 focus:border-red-500 focus:ring-red-500/20')
-                        : 'border-zinc-800 focus:border-purple-500 focus:ring-purple-500/50'
+                      repoSearchQuery
+                        ? isValidRepo
+                          ? 'border-green-500/50 focus:border-green-500 focus:ring-green-500/20'
+                          : 'border-red-500/50 focus:border-red-500 focus:ring-red-500/20'
+                        : 'border-zinc-800 focus:border-purple-500 focus:ring-purple-500/50',
                     ]"
                   />
-                  <div v-if="repoSearchQuery" class="absolute right-3 top-1/2 -translate-y-1/2">
-                    <CheckCircle2 v-if="isValidRepo" :size="18" class="text-green-500" />
+                  <div
+                    v-if="repoSearchQuery"
+                    class="absolute right-3 top-1/2 -translate-y-1/2"
+                  >
+                    <CheckCircle2
+                      v-if="isValidRepo"
+                      :size="18"
+                      class="text-green-500"
+                    />
                     <AlertCircle v-else :size="18" class="text-red-500" />
                   </div>
                 </div>
-                <div v-if="repoSearchQuery && !isValidRepo" class="mt-1 text-xs text-red-400">
+                <div
+                  v-if="repoSearchQuery && !isValidRepo"
+                  class="mt-1 text-xs text-red-400"
+                >
                   Dépôt non trouvé dans vos dépôts visibles
                 </div>
               </div>
@@ -335,7 +455,9 @@ async function sendReport() {
                   :disabled="isLoadingRepos"
                 >
                   <option :value="null" disabled>
-                    {{ isLoadingRepos ? "Chargement..." : "Sélectionner un dépôt" }}
+                    {{
+                      isLoadingRepos ? "Chargement..." : "Sélectionner un dépôt"
+                    }}
                   </option>
                   <option
                     v-for="repo in repositories"
@@ -443,17 +565,18 @@ async function sendReport() {
           </div>
 
           <!-- Empty state -->
-          <div
-            v-else
-            class="p-8 text-center"
-          >
+          <div v-else class="p-8 text-center">
             <div
               class="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4"
             >
               <GitBranch :size="24" class="text-zinc-600" />
             </div>
             <p class="text-zinc-400 text-sm">
-              {{ selectedRepo ? "Aucun commit trouvé" : "Sélectionnez un dépôt pour voir les commits" }}
+              {{
+                selectedRepo
+                  ? "Aucun commit trouvé"
+                  : "Sélectionnez un dépôt pour voir les commits"
+              }}
             </p>
           </div>
         </div>

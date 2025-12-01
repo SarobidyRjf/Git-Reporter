@@ -21,6 +21,8 @@ model User {
   githubToken String?
   visibleRepos String[] @default([])
   settings    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt @default(now())
   reports     Report[]
 }
 

@@ -51,134 +51,99 @@ const showDeleteModal = ref(false);
 const reportToDelete = ref<any>(null);
 
 // Stats
-const stats = computed(() => {
-  const emailCount = reports.value.filter((r) => r.method === "email").length;
-  const whatsappCount = reports.value.filter(
-    (r) => r.method === "whatsapp",
-  ).length;
-
-  return {
-    total: reports.value.length,
-    email: emailCount,
-    whatsapp: whatsappCount,
-  };
+const stats = ref({
+  total: 0,
+  email: 0,
+  whatsapp: 0,
 });
 
-// Filtered reports
-const filteredReports = computed(() => {
-  let filtered = [...reports.value];
+// Watchers for server-side filtering/pagination
+import { watch } from "vue";
 
-  // Filter by method
-  if (selectedMethod.value !== "all") {
-    filtered = filtered.filter((r) => r.method === selectedMethod.value);
-  }
-
-  // Filter by search
-  if (searchQuery.value.trim()) {
-    const query = searchQuery.value.toLowerCase();
-    filtered = filtered.filter(
-      (r) =>
-        r.repoName?.toLowerCase().includes(query) ||
-        r.content?.toLowerCase().includes(query) ||
-        r.sentTo?.toLowerCase().includes(query),
-    );
-  }
-
-  return filtered;
+watch([currentPage, selectedMethod, searchQuery], () => {
+  loadReports();
 });
 
-// Paginated reports
-const paginatedReports = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage;
-  const end = start + itemsPerPage;
-  return filteredReports.value.slice(start, end);
+// Debounce search
+let searchTimeout: NodeJS.Timeout;
+watch(searchQuery, () => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 1; // Reset to page 1 on search
+    loadReports();
+  }, 300);
 });
-
-// Update total pages when filtered reports change
-const updatePagination = () => {
-  totalPages.value = Math.ceil(filteredReports.value.length / itemsPerPage);
-  if (currentPage.value > totalPages.value) {
-    currentPage.value = 1;
-  }
-};
 
 // Fonctions
 onMounted(() => {
   loadReports();
+  loadStats();
 });
 
-function loadReports() {
+async function loadReports() {
   isLoading.value = true;
-  setTimeout(() => {
-    reports.value = [
-      {
-        id: "1",
-        repoName: "my-awesome-project",
-        content:
-          "Rapport hebdomadaire des commits\n- feat: Ajout authentification\n- fix: Correction bugs",
-        method: "email",
-        sentTo: "manager@company.com",
-        createdAt: new Date("2024-01-15T14:30:00Z"),
-        status: "sent",
-      },
-      {
-        id: "2",
-        repoName: "frontend-app",
-        content:
-          "Mise à jour du design system\n- style: Nouveaux composants\n- docs: Documentation",
-        method: "whatsapp",
-        sentTo: "+33612345678",
-        createdAt: new Date("2024-01-14T10:15:00Z"),
-        status: "sent",
-      },
-      {
-        id: "3",
-        repoName: "backend-api",
-        content:
-          "Corrections de sécurité\n- fix: Vulnérabilités corrigées\n- refactor: Code optimisé",
-        method: "email",
-        sentTo: "team@company.com",
-        createdAt: new Date("2024-01-13T16:45:00Z"),
-        status: "sent",
-      },
-      {
-        id: "4",
-        repoName: "mobile-app",
-        content:
-          "Release v2.0\n- feat: Nouvelle interface\n- perf: Améliorations",
-        method: "email",
-        sentTo: "stakeholders@company.com",
-        createdAt: new Date("2024-01-12T09:20:00Z"),
-        status: "sent",
-      },
-      {
-        id: "5",
-        repoName: "data-pipeline",
-        content:
-          "Optimisation des requêtes\n- perf: Indexation\n- fix: Gestion erreurs",
-        method: "whatsapp",
-        sentTo: "+33687654321",
-        createdAt: new Date("2024-01-11T13:00:00Z"),
-        status: "sent",
-      },
-    ];
-    totalReports.value = reports.value.length;
-    updatePagination();
+  try {
+    const response = await api.getReports({
+      page: currentPage.value,
+      limit: itemsPerPage,
+      method: selectedMethod.value !== 'all' ? selectedMethod.value : undefined,
+      repoName: searchQuery.value || undefined
+    });
+
+    if (response.success && response.data) {
+      reports.value = response.data.reports;
+      totalReports.value = response.data.pagination.total;
+      totalPages.value = response.data.pagination.totalPages;
+    }
+  } catch (error) {
+    console.error("Erreur lors du chargement des rapports:", error);
+  } finally {
     isLoading.value = false;
-  }, 800);
+  }
 }
 
-function formatDate(date: Date) {
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
+async function loadStats() {
+  try {
+    const response = await api.getUserStats();
+    if (response.success && response.data) {
+      stats.value = {
+        total: response.data.totalReports,
+        email: response.data.reportsByMethod.email,
+        whatsapp: response.data.reportsByMethod.whatsapp
+      };
+    }
+  } catch (error) {
+    console.error("Erreur lors du chargement des statistiques:", error);
+  }
 }
 
-function formatDateShort(date: Date) {
+function formatDate(dateInput: string | Date) {
+  const date = new Date(dateInput);
+  
+  // Utiliser le format préféré si disponible
+  const format = authStore.user?.settings?.appearance?.dateFormat || "DD/MM/YYYY";
+  
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+
+  let dateStr = "";
+  if (format === "MM/DD/YYYY") {
+    dateStr = `${month}/${day}/${year}`;
+  } else if (format === "YYYY-MM-DD") {
+    dateStr = `${year}-${month}-${day}`;
+  } else {
+    // Default DD/MM/YYYY
+    dateStr = `${day}/${month}/${year}`;
+  }
+  
+  return `${dateStr} ${hours}:${minutes}`;
+}
+
+function formatDateShort(dateInput: string | Date) {
+  const date = new Date(dateInput);
   const now = new Date();
   const diffInDays = Math.floor(
     (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
@@ -211,11 +176,12 @@ async function deleteReport() {
   if (!reportToDelete.value) return;
 
   try {
-    // await api.delete(`/api/reports/${reportToDelete.value.id}`);
-    reports.value = reports.value.filter(
-      (r) => r.id !== reportToDelete.value.id,
-    );
-    updatePagination();
+    await api.deleteReport(reportToDelete.value.id);
+    
+    // Recharger les données
+    await loadReports();
+    await loadStats();
+    
     showDeleteModal.value = false;
     reportToDelete.value = null;
   } catch (error) {
@@ -336,7 +302,7 @@ function downloadReport(report: any) {
                 type="text"
                 placeholder="Rechercher un rapport..."
                 class="w-full pl-10 pr-4 py-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
-                @input="updatePagination"
+                @input="() => {}"
               />
             </div>
 
@@ -345,7 +311,6 @@ function downloadReport(report: any) {
               <button
                 @click="
                   selectedMethod = 'all';
-                  updatePagination();
                 "
                 :class="[
                   'px-4 py-2.5 rounded-lg font-medium text-sm transition-all',
@@ -359,7 +324,6 @@ function downloadReport(report: any) {
               <button
                 @click="
                   selectedMethod = 'email';
-                  updatePagination();
                 "
                 :class="[
                   'px-4 py-2.5 rounded-lg font-medium text-sm transition-all flex items-center gap-2',
@@ -374,7 +338,6 @@ function downloadReport(report: any) {
               <button
                 @click="
                   selectedMethod = 'whatsapp';
-                  updatePagination();
                 "
                 :class="[
                   'px-4 py-2.5 rounded-lg font-medium text-sm transition-all flex items-center gap-2',
@@ -405,7 +368,7 @@ function downloadReport(report: any) {
 
           <!-- Empty State -->
           <div
-            v-else-if="paginatedReports.length === 0"
+            v-else-if="reports.length === 0"
             class="flex flex-col items-center justify-center py-16"
           >
             <div
@@ -434,7 +397,7 @@ function downloadReport(report: any) {
           <!-- Reports Grid -->
           <div v-else class="space-y-3">
             <div
-              v-for="report in paginatedReports"
+              v-for="report in reports"
               :key="report.id"
               class="bg-zinc-900/50 border border-zinc-800 rounded-lg p-5 hover:bg-zinc-900/80 hover:border-zinc-700 transition-all group"
             >

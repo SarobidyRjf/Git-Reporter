@@ -1,0 +1,269 @@
+/* ========================================
+   OVERRIDES TAILWIND POUR THÈME
+   ======================================== */
+
+/* Backgrounds */
+.bg-theme-primary { background-color: var(--bg-primary) !important; }
+.bg-theme-secondary { background-color: var(--bg-secondary) !important; }
+.bg-theme-tertiary { background-color: var(--bg-tertiary) !important; }
+
+/* Texte */
+.text-theme-primary { color: var(--text-primary) !important; }
+.text-theme-secondary { color: var(--text-secondary) !important; }
+.text-theme-tertiary { color: var(--text-tertiary) !important; }
+
+/* Bordures */
+.border-theme-primary { border-color: var(--border-primary) !important; }
+.border-theme-secondary { border-color: var(--border-secondary) !important; }
+
+/* Classes de remplacement pour les composants */
+.bg-zinc-950,
+.bg-zinc-900 { background-color: var(--bg-secondary) !important; }
+
+/* Backgrounds avec opacité - Mode clair sans flou */
+:root.light .bg-zinc-900\/50,
+:root.light .bg-zinc-900\/30,
+:root.light .bg-zinc-900\/95 {
+  background-color: var(--bg-secondary) !important;
+  opacity: 1 !important;
+}
+
+/* Backgrounds avec opacité - Mode sombre */
+:root.dark .bg-zinc-900\/50 {
+  background-color: rgba(22, 27, 34, 0.5) !important;
+}
+
+:root.dark .bg-zinc-900\/30 {
+  background-color: rgba(22, 27, 34, 0.3) !important;
+}
+
+:root.dark .bg-zinc-900\/95 {
+  background-color: rgba(22, 27, 34, 0.95) !important;
+}
+
+.bg-zinc-800 { background-color: var(--bg-tertiary) !important; }
+
+.bg-zinc-800\/50 {
+  background-color: var(--bg-hover) !important;
+}
+
+.text-white { color: var(--text-primary) !important; }
+.text-zinc-400,
+.text-zinc-300 { color: var(--text-secondary) !important; }
+.text-zinc-500 { color: var(--text-tertiary) !important; }
+
+/* Force tous les textes à être foncés en mode clair */
+:root.light .text-white,
+:root.light .text-zinc-50,
+:root.light .text-zinc-100,
+:root.light .text-zinc-200 {
+  color: var(--text-primary) !important;
+}
+
+:root.light .text-zinc-300,
+:root.light .text-zinc-400 {
+  color: var(--text-secondary) !important;
+}
+
+:root.light .text-zinc-500,
+:root.light .text-zinc-600 {
+  color: var(--text-tertiary) !important;
+}
+
+/* Tous les éléments de texte génériques */
+:root.light h1,
+:root.light h2,
+:root.light h3,
+:root.light h4,
+:root.light h5,
+:root.light h6,
+:root.light p,
+:root.light span,
+:root.light div,
+:root.light label,
+:root.light button {
+  color: var(--text-primary);
+}
+
+:root.light .text-sm,
+:root.light .text-xs {
+  color: var(--text-secondary);
+}
+
+.border-zinc-800,
+.border-zinc-700 { border-color: var(--border-primary) !important; }
+
+/* Hover states */
+.hover\:bg-zinc-800:hover,
+.hover\:bg-zinc-900:hover,
+.hover\:bg-zinc-800\/50:hover,
+.hover\:bg-zinc-900\/80:hover { 
+  background-color: var(--bg-hover) !important; 
+}
+
+.hover\:text-white:hover { color: var(--text-primary) !important; }
+.hover\:text-zinc-300:hover { color: var(--text-secondary) !important; }
+
+/* ========================================
+   AMÉLIORATION DES ACCENTS EN MODE CLAIR
+   ======================================== */
+
+/* Gradients - Plus visibles en mode clair */
+:root.light .bg-gradient-to-br.from-purple-500,
+:root.light .bg-gradient-to-r.from-purple-600 {
+  background: linear-gradient(to bottom right, var(--accent-purple), var(--accent-blue)) !important;
+}
+
+:root.light .bg-gradient-to-r.from-purple-600\/20 {
+  background: linear-gradient(to right, rgba(130, 80, 223, 0.15), rgba(9, 105, 218, 0.15)) !important;
+  border-color: rgba(130, 80, 223, 0.3) !important;
+}
+
+/* Ombres des gradients - Plus prononcées en mode clair */
+:root.light .shadow-purple-500\/30 {
+  box-shadow: 0 4px 14px 0 rgba(130, 80, 223, 0.4) !important;
+}
+
+:root.light .shadow-lg.shadow-purple-500\/30 {
+  box-shadow: 0 10px 40px -10px rgba(130, 80, 223, 0.5) !important;
+}
+
+/* Boutons et éléments interactifs en mode clair */
+:root.light button,
+:root.light .bg-purple-500,
+:root.light .bg-purple-600 {
+  filter: brightness(1) saturate(1.1);
+}
+
+:root.light button:hover,
+:root.light .bg-purple-500:hover,
+:root.light .bg-purple-600:hover {
+  filter: brightness(0.95) saturate(1.2);
+}
+
+/* Cartes et conteneurs - Plus de profondeur en mode clair */
+:root.light .rounded-xl,
+:root.light .rounded-lg,
+:root.light .rounded-2xl {
+  box-shadow: 0 1px 3px 0 rgba(31, 35, 40, 0.12), 0 1px 2px 0 rgba(31, 35, 40, 0.08) !important;
+}
+
+:root.light .border.border-zinc-800,
+:root.light .border.border-zinc-700 {
+  border-color: var(--border-primary) !important;
+  box-shadow: 0 0 0 1px rgba(31, 35, 40, 0.04) !important;
+}
+
+/* Icônes - Plus contrastées en mode clair */
+:root.light .text-purple-400,
+:root.light .text-blue-400,
+:root.light .text-green-400 {
+  filter: brightness(0.8) saturate(1.3);
+}
+
+/* Input et form elements */
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="number"],
+input[type="password"],
+input[type="checkbox"],
+textarea,
+select {
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-primary) !important;
+}
+
+:root.light input[type="text"],
+:root.light input[type="email"],
+:root.light input[type="tel"],
+:root.light input[type="number"],
+:root.light input[type="password"],
+:root.light textarea,
+:root.light select {
+  box-shadow: 0 1px 2px 0 rgba(31, 35, 40, 0.04) inset !important;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="tel"]:focus,
+input[type="number"]:focus,
+input[type="password"]:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--accent-purple) !important;
+  box-shadow: 0 0 0 3px rgba(130, 80, 223, 0.12) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-tertiary) !important;
+}
+
+/* Stats cards et badges - Plus visibles en mode clair */
+:root.light .bg-purple-500\/10 {
+  background-color: rgba(130, 80, 223, 0.08) !important;
+  border-color: rgba(130, 80, 223, 0.2) !important;
+}
+
+:root.light .bg-blue-500\/10 {
+  background-color: rgba(9, 105, 218, 0.08) !important;
+  border-color: rgba(9, 105, 218, 0.2) !important;
+}
+
+:root.light .bg-green-500\/10 {
+  background-color: rgba(26, 127, 55, 0.08) !important;
+  border-color: rgba(26, 127, 55, 0.2) !important;
+}
+
+:root.light .bg-red-500\/10 {
+  background-color: rgba(209, 36, 47, 0.08) !important;
+  border-color: rgba(209, 36, 47, 0.2) !important;
+}
+
+/* Textes d'accent - Plus foncés en mode clair */
+:root.light .text-purple-400 {
+  color: var(--accent-purple) !important;
+  font-weight: 500;
+}
+
+:root.light .text-blue-400 {
+  color: var(--accent-blue) !important;
+  font-weight: 500;
+}
+
+:root.light .text-green-400 {
+  color: var(--accent-green) !important;
+  font-weight: 500;
+}
+
+:root.light .text-red-400 {
+  color: var(--accent-red) !important;
+  font-weight: 500;
+}
+
+/* Hover sur les cartes */
+:root.light .hover\:bg-zinc-900\/80:hover,
+:root.light .hover\:bg-zinc-800:hover {
+  background-color: var(--bg-hover) !important;
+  box-shadow: 0 4px 12px 0 rgba(31, 35, 40, 0.08) !important;
+}
+
+/* Bordures actives - Plus visibles */
+:root.light .border-purple-500\/30 {
+  border-color: rgba(130, 80, 223, 0.35) !important;
+}
+
+:root.light .border-blue-500\/20 {
+  border-color: rgba(9, 105, 218, 0.25) !important;
+}
+
+/* Amélioration de la lisibilité des badges */
+:root.light .bg-purple-500\/20 {
+  background-color: rgba(130, 80, 223, 0.12) !important;
+}
+
+:root.light .bg-blue-500\/20 {
+  background-color: rgba(9, 105, 218, 0.12) !important;
+}

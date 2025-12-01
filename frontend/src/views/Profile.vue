@@ -33,62 +33,24 @@ const authStore = useAuthStore();
 // État
 const isLoading = ref(false);
 const stats = ref({
-  totalReports: 42,
-  reportsThisMonth: 12,
-  emailsSent: 28,
-  whatsappSent: 14,
-  averagePerWeek: 10,
-  longestStreak: 7,
-  repositoriesTracked: 8,
-  lastReportDate: new Date("2024-01-15T14:30:00Z"),
+  totalReports: 0,
+  reportsThisMonth: 0,
+  emailsSent: 0,
+  whatsappSent: 0,
+  averagePerWeek: 0,
+  longestStreak: 0,
+  repositoriesTracked: 0,
+  lastReportDate: new Date(),
 });
 
-const recentActivity = ref([
-  {
-    id: 1,
-    type: "report",
-    description: "Rapport envoyé pour my-awesome-project",
-    method: "email",
-    date: new Date("2024-01-15T14:30:00Z"),
-  },
-  {
-    id: 2,
-    type: "report",
-    description: "Rapport envoyé pour frontend-app",
-    method: "whatsapp",
-    date: new Date("2024-01-14T10:15:00Z"),
-  },
-  {
-    id: 3,
-    type: "report",
-    description: "Rapport envoyé pour backend-api",
-    method: "email",
-    date: new Date("2024-01-13T16:45:00Z"),
-  },
-  {
-    id: 4,
-    type: "report",
-    description: "Rapport envoyé pour mobile-app",
-    method: "email",
-    date: new Date("2024-01-12T09:20:00Z"),
-  },
-  {
-    id: 5,
-    type: "report",
-    description: "Rapport envoyé pour data-pipeline",
-    method: "whatsapp",
-    date: new Date("2024-01-11T13:00:00Z"),
-  },
-]);
+const recentActivity = ref<any[]>([]);
 
 // Computed
 const user = computed(() => authStore.user);
 
 const memberSince = computed(() => {
-  // Utiliser une date par défaut si createdAt n'existe pas
-  const createdDate = new Date();
-  createdDate.setMonth(createdDate.getMonth() - 3); // 3 mois par défaut
-  const date = createdDate;
+  if (!authStore.user?.createdAt) return "Récemment";
+  const date = new Date(authStore.user.createdAt);
   return date.toLocaleDateString("fr-FR", {
     month: "long",
     year: "numeric",
@@ -118,12 +80,52 @@ onMounted(() => {
   loadProfileData();
 });
 
-function loadProfileData() {
+import api from "../services/api";
+
+async function loadProfileData() {
   isLoading.value = true;
-  // Simuler le chargement des données
-  setTimeout(() => {
+  try {
+    const response = await api.getUserStats();
+    if (response.success && response.data) {
+      const data = response.data;
+      
+      // Calculer les stats dérivées
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+      
+      // Rapports ce mois-ci (approximation basée sur recentReports si pas dispo dans l'API)
+      // Idéalement l'API devrait renvoyer cette info, mais on va faire avec ce qu'on a
+      const reportsThisMonth = data.recentReports.filter(r => {
+        const d = new Date(r.createdAt);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      }).length;
+
+      stats.value = {
+        totalReports: data.totalReports,
+        reportsThisMonth: reportsThisMonth, // À améliorer côté backend si besoin
+        emailsSent: data.reportsByMethod.email,
+        whatsappSent: data.reportsByMethod.whatsapp,
+        averagePerWeek: Math.round(data.totalReports / 4), // Approximation
+        longestStreak: 0, // Non disponible dans l'API actuelle
+        repositoriesTracked: data.topRepositories.length,
+        lastReportDate: data.recentReports.length > 0 ? new Date(data.recentReports[0].createdAt) : new Date(),
+      };
+
+      // Mapper l'activité récente
+      recentActivity.value = data.recentReports.map(report => ({
+        id: report.id,
+        type: "report",
+        description: `Rapport envoyé pour ${report.repoName}`,
+        method: report.method,
+        date: new Date(report.createdAt),
+      }));
+    }
+  } catch (error) {
+    console.error("Erreur lors du chargement du profil:", error);
+  } finally {
     isLoading.value = false;
-  }, 500);
+  }
 }
 </script>
 
