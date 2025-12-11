@@ -36,6 +36,9 @@ import authRoutes from "./routes/auth.routes";
 import githubRoutes from "./routes/github.routes";
 import reportsRoutes from "./routes/reports.routes";
 import userRoutes from "./routes/user.routes";
+import templatesRoutes from "./routes/templates.routes";
+import schedulesRoutes from "./routes/schedules.routes";
+import teamsRoutes from "./routes/teams.routes";
 import logger from "./utils/logger";
 
 /**
@@ -171,6 +174,21 @@ const initializeApp = (): Application => {
    * Routes de gestion utilisateur
    */
   app.use("/api/user", userRoutes);
+
+  /**
+   * Routes de gestion des templates
+   */
+  app.use("/api/templates", templatesRoutes);
+
+  /**
+   * Routes de gestion des schedules
+   */
+  app.use("/api/schedules", schedulesRoutes);
+
+  /**
+   * Routes pour les équipes
+   */
+  app.use("/api/teams", teamsRoutes);
 
   /**
    * Routes de test pour l'envoi d'emails et WhatsApp

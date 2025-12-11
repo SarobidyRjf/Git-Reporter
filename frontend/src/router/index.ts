@@ -23,7 +23,12 @@ import apiService from "../services/api";
 const routes: RouteRecordRaw[] = [
   {
     path: "/",
-    redirect: "/dashboard",
+    name: "Landing",
+    component: () => import("../views/Landing.vue"),
+    meta: {
+      requiresAuth: false,
+      title: "Accueil",
+    },
   },
   {
     path: "/login",
@@ -77,6 +82,33 @@ const routes: RouteRecordRaw[] = [
     meta: {
       requiresAuth: true,
       title: "Profil",
+    },
+  },
+  {
+    path: "/templates",
+    name: "Templates",
+    component: () => import("../views/Templates.vue"),
+    meta: {
+      requiresAuth: true,
+      title: "Modèles",
+    },
+  },
+  {
+    path: "/schedules",
+    name: "Schedules",
+    component: () => import("../views/Schedules.vue"),
+    meta: {
+      requiresAuth: true,
+      title: "Planification",
+    },
+  },
+  {
+    path: "/teams",
+    name: "Teams",
+    component: () => import("../views/Teams.vue"),
+    meta: {
+      requiresAuth: true,
+      title: "Équipes",
     },
   },
   {
@@ -143,6 +175,7 @@ router.beforeEach(async (to, from, next) => {
       console.log("✅ Déjà connecté - Redirection vers dashboard");
       next({ name: "Dashboard" });
     } else {
+      // Permettre l'accès à la landing page même si connecté
       next();
     }
   }

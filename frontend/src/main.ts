@@ -15,6 +15,8 @@ import App from "./App.vue";
 import router from "./router";
 import { useAuthStore } from "./stores/auth.store";
 import "./style.css";
+import "./theme-overrides.css";
+import "./assets/driver-custom.css"; // Custom driver.js styles
 
 /**
  * Créer l'instance de l'application Vue
@@ -31,6 +33,9 @@ const pinia = createPinia();
  */
 app.use(pinia); // Doit être installé avant le router pour les stores
 app.use(router);
+
+import VueApexCharts from "vue3-apexcharts";
+app.use(VueApexCharts);
 
 /**
  * Initialiser l'authentification au démarrage de l'application

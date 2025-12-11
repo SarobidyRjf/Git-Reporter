@@ -11,8 +11,10 @@
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "../stores/auth.store";
+import type { Repository } from "../types";
 import api from "../services/api";
 import {
+  GitBranch,
   Mail,
   MessageCircle,
   Search,
@@ -29,6 +31,7 @@ import {
   AlertCircle,
   Loader2,
   X,
+  ChevronDown
 } from "lucide-vue-next";
 import AppLayout from "../components/AppLayout.vue";
 
@@ -44,6 +47,27 @@ const currentPage = ref(1);
 const totalPages = ref(1);
 const totalReports = ref(0);
 const itemsPerPage = 10;
+const repositories = ref<Repository[]>([]);
+
+// Filters
+const filters = ref({
+  repo: "",
+  startDate: "",
+  endDate: "",
+  type: "",
+  author: "",
+});
+
+const commitTypes = [
+  { value: "", label: "Tous les types" },
+  { value: "feat", label: "Features (feat)" },
+  { value: "fix", label: "Bug Fixes (fix)" },
+  { value: "docs", label: "Documentation (docs)" },
+  { value: "style", label: "Styles" },
+  { value: "refactor", label: "Refactor" },
+  { value: "test", label: "Tests" },
+  { value: "chore", label: "Chore" },
+];
 
 // Modal
 const selectedReport = ref<any>(null);
@@ -60,12 +84,12 @@ const stats = ref({
 // Watchers for server-side filtering/pagination
 import { watch } from "vue";
 
-watch([currentPage, selectedMethod, searchQuery], () => {
+watch([currentPage, selectedMethod, searchQuery, filters], () => {
   loadReports();
-});
+}, { deep: true });
 
 // Debounce search
-let searchTimeout: NodeJS.Timeout;
+let searchTimeout: ReturnType<typeof setTimeout>;
 watch(searchQuery, () => {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
@@ -78,7 +102,19 @@ watch(searchQuery, () => {
 onMounted(() => {
   loadReports();
   loadStats();
+  loadRepositories();
 });
+
+async function loadRepositories() {
+  try {
+    const response = await api.getUserRepositories();
+    if (response.success && response.data) {
+      repositories.value = response.data.repositories;
+    }
+  } catch (error) {
+    console.error("Failed to load repositories:", error);
+  }
+}
 
 async function loadReports() {
   isLoading.value = true;
@@ -87,11 +123,15 @@ async function loadReports() {
       page: currentPage.value,
       limit: itemsPerPage,
       method: selectedMethod.value !== 'all' ? selectedMethod.value : undefined,
-      repoName: searchQuery.value || undefined
+      repoName: filters.value.repo || searchQuery.value || undefined,
+      startDate: filters.value.startDate || undefined,
+      endDate: filters.value.endDate || undefined,
+      type: filters.value.type || undefined,
+      author: filters.value.author || undefined,
     });
 
     if (response.success && response.data) {
-      reports.value = response.data.reports;
+      reports.value = response.data.data;
       totalReports.value = response.data.pagination.total;
       totalPages.value = response.data.pagination.totalPages;
     }
@@ -304,6 +344,72 @@ function downloadReport(report: any) {
                 class="w-full pl-10 pr-4 py-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
                 @input="() => {}"
               />
+            </div>
+
+            <!-- Advanced Filters Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+              <!-- Date Range -->
+              <div class="flex gap-2">
+                <input
+                  v-model="filters.startDate"
+                  type="date"
+                  class="w-full px-3 py-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                  placeholder="Date début"
+                />
+                <input
+                  v-model="filters.endDate"
+                  type="date"
+                  class="w-full px-3 py-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                  placeholder="Date fin"
+                />
+              </div>
+
+               <!-- Author -->
+               <div class="relative">
+                  <input
+                    v-model="filters.author"
+                    type="text"
+                    placeholder="Auteur..."
+                    class="w-full px-3 py-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                  />
+               </div>
+
+               <!-- Commit Type -->
+               <div class="relative">
+                  <select
+                    v-model="filters.type"
+                    class="w-full px-3 py-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 appearance-none cursor-pointer"
+                  >
+                     <option v-for="type in commitTypes" :key="type.value" :value="type.value">
+                        {{ type.label }}
+                     </option>
+                  </select>
+                  <ChevronDown :size="14" class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
+               </div>
+
+               <!-- Repository Filter -->
+               <div class="relative">
+                  <select
+                    v-model="filters.repo"
+                    class="w-full px-3 py-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 appearance-none cursor-pointer"
+                  >
+                     <option value="">Tous les dépôts</option>
+                     <option v-for="repo in repositories" :key="repo.id" :value="repo.name">
+                        {{ repo.name }}
+                     </option>
+                  </select>
+                  <ChevronDown :size="14" class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
+               </div>
+
+               <!-- Reset Filters -->
+               <button
+                  v-if="filters.startDate || filters.endDate || filters.type || filters.author || filters.repo"
+                  @click="filters = { startDate: '', endDate: '', type: '', author: '', repo: '' }"
+                  class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-sm transition-colors flex items-center justify-center gap-2"
+               >
+                  <X :size="14" />
+                  Réinitialiser
+               </button>
             </div>
 
             <!-- Filter by method -->

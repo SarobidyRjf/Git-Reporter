@@ -25,6 +25,9 @@ import type {
   Repository,
   User,
   UserStats,
+  Team,
+  TeamMember,
+  TeamRole
 } from "../types";
 
 /**
@@ -311,6 +314,108 @@ class ApiService {
   async getUserStats(): Promise<ApiResponse<UserStats>> {
     const response =
       await this.api.get<ApiResponse<UserStats>>("/api/reports/stats");
+    return response.data;
+  }
+
+  // ============================================================================
+  // TEMPLATES
+  // ============================================================================
+
+  async getTemplates(): Promise<ApiResponse<any[]>> {
+    const response = await this.api.get<ApiResponse<any[]>>("/api/templates");
+    return response.data;
+  }
+
+  async createTemplate(data: any): Promise<ApiResponse<any>> {
+    const response = await this.api.post<ApiResponse<any>>("/api/templates", data);
+    return response.data;
+  }
+
+  async updateTemplate(id: string, data: any): Promise<ApiResponse<any>> {
+    const response = await this.api.put<ApiResponse<any>>(`/api/templates/${id}`, data);
+    return response.data;
+  }
+
+  async deleteTemplate(id: string): Promise<ApiResponse> {
+    const response = await this.api.delete<ApiResponse>(`/api/templates/${id}`);
+    return response.data;
+  }
+
+  async previewTemplate(id: string, data: any): Promise<ApiResponse<any>> {
+    const response = await this.api.post<ApiResponse<any>>(`/api/templates/${id}/preview`, data);
+    return response.data;
+  }
+
+  // ============================================================================
+  // SCHEDULES
+  // ============================================================================
+
+  async getSchedules(): Promise<ApiResponse<any[]>> {
+    const response = await this.api.get<ApiResponse<any[]>>("/api/schedules");
+    return response.data;
+  }
+
+  async createSchedule(data: any): Promise<ApiResponse<any>> {
+    const response = await this.api.post<ApiResponse<any>>("/api/schedules", data);
+    return response.data;
+  }
+
+  async updateSchedule(id: string, data: any): Promise<ApiResponse<any>> {
+    const response = await this.api.put<ApiResponse<any>>(`/api/schedules/${id}`, data);
+    return response.data;
+  }
+
+  async deleteSchedule(id: string): Promise<ApiResponse> {
+    const response = await this.api.delete<ApiResponse>(`/api/schedules/${id}`);
+    return response.data;
+  }
+
+  async toggleSchedule(id: string): Promise<ApiResponse<{ isActive: boolean }>> {
+    const response = await this.api.patch<ApiResponse<{ isActive: boolean }>>(`/api/schedules/${id}/toggle`);
+    return response.data;
+  }
+
+  async runSchedule(id: string): Promise<ApiResponse<any>> {
+    const response = await this.api.post<ApiResponse<any>>(`/api/schedules/${id}/run`);
+    return response.data;
+  }
+
+  // ============================================================================
+  // TEAMS
+  // ============================================================================
+
+  async getTeams(): Promise<ApiResponse<Team[]>> {
+    const response = await this.api.get<ApiResponse<Team[]>>("/api/teams");
+    return response.data;
+  }
+
+  async getTeam(id: string): Promise<ApiResponse<Team>> {
+    const response = await this.api.get<ApiResponse<Team>>(`/api/teams/${id}`);
+    return response.data;
+  }
+
+  async createTeam(data: { name: string }): Promise<ApiResponse<Team>> {
+    const response = await this.api.post<ApiResponse<Team>>("/api/teams", data);
+    return response.data;
+  }
+
+  async deleteTeam(id: string): Promise<ApiResponse> {
+    const response = await this.api.delete<ApiResponse>(`/api/teams/${id}`);
+    return response.data;
+  }
+
+  async addTeamMember(teamId: string, data: { email: string; role?: TeamRole }): Promise<ApiResponse<TeamMember>> {
+    const response = await this.api.post<ApiResponse<TeamMember>>(`/api/teams/${teamId}/members`, data);
+    return response.data;
+  }
+
+  async updateTeamMemberRole(teamId: string, memberId: string, role: TeamRole): Promise<ApiResponse<TeamMember>> {
+    const response = await this.api.put<ApiResponse<TeamMember>>(`/api/teams/${teamId}/members/${memberId}`, { role });
+    return response.data;
+  }
+
+  async removeTeamMember(teamId: string, memberId: string): Promise<ApiResponse> {
+    const response = await this.api.delete<ApiResponse>(`/api/teams/${teamId}/members/${memberId}`);
     return response.data;
   }
 

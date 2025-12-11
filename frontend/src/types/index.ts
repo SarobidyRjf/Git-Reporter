@@ -28,6 +28,7 @@ export interface Report {
   id: string;
   userId: string;
   repoName: string;
+  repoNames: string[];
   content: string;
   sentTo: string | null;
   method: "email" | "whatsapp";
@@ -119,6 +120,14 @@ export interface UserStats {
     repoName: string;
     count: number;
   }[];
+  dailyStats: {
+    date: string;
+    count: number;
+  }[];
+  calendarStats: {
+    date: string;
+    count: number;
+  }[];
 }
 
 /**
@@ -131,9 +140,42 @@ export type ReportMethod = "email" | "whatsapp";
  */
 export interface CreateReportData {
   repoName: string;
+  repoNames?: string[];
   content: string;
   method: ReportMethod;
   sentTo: string;
+  teamId?: string;
+}
+
+export enum TeamRole {
+  ADMIN = 'ADMIN',
+  MEMBER = 'MEMBER',
+  VIEWER = 'VIEWER'
+}
+
+export interface TeamMember {
+  id: string;
+  userId: string;
+  teamId: string;
+  role: TeamRole;
+  joinedAt: string;
+  user: {
+    id: string;
+    name: string | null;
+    email: string | null;
+    avatarUrl: string | null;
+  };
+}
+
+export interface Team {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  members: TeamMember[];
+  _count?: {
+    reports: number;
+  };
 }
 
 /**
@@ -158,7 +200,11 @@ export interface ToastOptions {
  */
 export interface ReportFilters {
   repoName?: string;
-  method?: ReportMethod;
+  method?: string; // Relaxed to string to allow 'all' or specific
   page?: number;
   limit?: number;
+  startDate?: string;
+  endDate?: string;
+  author?: string;
+  type?: string;
 }

@@ -15,6 +15,7 @@ import prisma from "../db";
 import {
     NotFoundError,
     ValidationError,
+    ForbiddenError,
 } from "../middlewares/error.middleware";
 import emailService from "../services/email.service";
 import whatsappService from "../services/whatsapp.service";
@@ -57,6 +58,11 @@ export const getReports = async (
     // Paramètres de filtrage
     const repoName = req.query.repoName as string;
     const method = req.query.method as string;
+    const startDate = req.query.startDate as string;
+    const endDate = req.query.endDate as string;
+    const author = req.query.author as string;
+    const type = req.query.type as string;
+    const teamId = req.query.teamId as string;
 
     logger.debug("Fetching reports", {
       userId,
@@ -64,17 +70,65 @@ export const getReports = async (
       limit,
       repoName,
       method,
+      startDate,
+      endDate,
+      author,
+      type,
+      teamId
     });
 
     // Construction des filtres
-    const where: any = { userId };
+    const where: any = {};
+
+    if (teamId) {
+      // Vérifier l'appartenance à l'équipe
+      const isMember = await prisma.teamMember.findUnique({
+        where: { userId_teamId: { userId, teamId } }
+      });
+      if (!isMember) {
+        throw new ForbiddenError("Accès non autorisé aux rapports de cette équipe");
+      }
+      where.teamId = teamId;
+    } else {
+      // Par défaut : mes rapports personnels
+      where.userId = userId;
+      where.teamId = null; // Exclure les rapports d'équipe dans la vue perso ? Ou inclure ?
+      // Pour l'instant, séparons clairement : vue perso = mes rapports hors équipe (ou tous mes rapports ?)
+      // Si on veut voir "Mes rapports" (y compris ceux faits dans une équipe), on enlève teamId: null.
+      // Mais généralement on veut filtrer par contexte. Gardons simple : userId match le créateur.
+    }
 
     if (repoName) {
-      where.repoName = { contains: repoName, mode: "insensitive" };
+      where.repoNames = { has: repoName };
     }
 
     if (method && isValidReportMethod(method)) {
       where.method = method;
+    }
+
+    // Filtre par date
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) {
+        where.createdAt.gte = new Date(startDate);
+      }
+      if (endDate) {
+        // Fin de la journée pour endDate
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        where.createdAt.lte = end;
+      }
+    }
+
+    // Filtre par contenu (pseudo type de commit)
+    if (type) {
+      where.content = { contains: type, mode: "insensitive" };
+    }
+    
+    if (author) {
+       where.user = {
+         name: { contains: author, mode: "insensitive" }
+       };
     }
 
     // Récupération des rapports avec pagination
@@ -98,6 +152,11 @@ export const getReports = async (
       prisma.report.count({ where }),
     ]);
 
+    const formattedReports = reports.map((report: any) => ({
+      ...report,
+      repoName: report.repoNames.join(', '),
+    }));
+
     logDatabase("READ", "Report", { count: reports.length, userId });
 
     const totalPages = Math.ceil(total / limit);
@@ -105,7 +164,7 @@ export const getReports = async (
     res.json({
       success: true,
       data: {
-        reports,
+        data: formattedReports,
         pagination: {
           page,
           limit,
@@ -168,6 +227,11 @@ export const getReport = async (
       throw new NotFoundError("Rapport");
     }
 
+    const formattedReport = {
+      ...report,
+      repoName: report.repoNames.join(', ')
+    };
+
     logDatabase("READ", "Report", { reportId: id, userId });
 
     res.json({
@@ -207,11 +271,24 @@ export const createReport = async (
     }
 
     const userId = req.user.userId;
-    const { repoName, content, method, sentTo } = req.body;
+    // Accept repoName for backward compatibility, or repoNames for multi-repo
+    const { repoName, repoNames, content, method, sentTo, teamId } = req.body;
+
+    // Validation équipe
+    if (teamId) {
+      const isMember = await prisma.teamMember.findUnique({
+        where: { userId_teamId: { userId, teamId } }
+      });
+      if (!isMember) {
+        throw new ForbiddenError("Vous n'êtes pas membre de cette équipe");
+      }
+    }
+
+    const finalRepoNames = repoNames || (repoName ? [repoName] : []);
 
     // Validation des données
-    if (!repoName || typeof repoName !== "string") {
-      throw new ValidationError("Le nom du dépôt est requis");
+    if (!finalRepoNames || !Array.isArray(finalRepoNames) || finalRepoNames.length === 0) {
+      throw new ValidationError("Au moins un dépôt est requis");
     }
 
     if (!content || typeof content !== "string") {
@@ -230,7 +307,7 @@ export const createReport = async (
 
     logger.info("Creating new report", {
       userId,
-      repoName,
+      repoNames: finalRepoNames,
       method,
       sentTo,
     });
@@ -239,10 +316,11 @@ export const createReport = async (
     const report = await prisma.report.create({
       data: {
         userId,
-        repoName,
+        repoNames: finalRepoNames,
         content,
         method,
         sentTo,
+        teamId, // Optional
       },
       include: {
         user: true,
@@ -259,7 +337,7 @@ export const createReport = async (
         await emailService.sendReport({
           to: sentTo,
           reportContent: content,
-          repoName,
+          repoName: finalRepoNames.join(', '),
           reportId: report.id,
         });
         sendSuccess = true;
@@ -277,7 +355,7 @@ export const createReport = async (
         await whatsappService.sendReport({
           to: sentTo,
           reportContent: content,
-          repoName,
+          repoName: finalRepoNames.join(', '),
           reportId: report.id,
         });
         sendSuccess = true;
@@ -310,7 +388,7 @@ export const createReport = async (
 
     res.status(201).json({
       success: true,
-      data: report,
+      data: { ...report, repoName: report.repoNames.join(', ') },
       message: `Rapport créé et envoyé avec succès via ${method}`,
       timestamp: new Date().toISOString(),
     });
@@ -398,8 +476,21 @@ export const getUserStats = async (
 
     logger.debug("Fetching user statistics", { userId });
 
+    const now = new Date();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(now.getDate() - 30);
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(now.getFullYear() - 1);
+
     // Statistiques globales
-    const [totalReports, reportsByMethod, recentReports, repoStats] =
+    const [
+      totalReports,
+      reportsByMethod,
+      recentReports,
+      repoStats,
+      dailyReports,
+      calendarReports
+    ] =
       await Promise.all([
         // Total des rapports
         prisma.report.count({ where: { userId } }),
@@ -418,21 +509,45 @@ export const getUserStats = async (
           orderBy: { createdAt: "desc" },
           select: {
             id: true,
-            repoName: true,
+            repoNames: true,
             method: true,
             sentTo: true,
             createdAt: true,
           },
         }),
 
-        // Dépôts les plus utilisés
+        // Dépôts les plus utilisés (Combinaisons)
         prisma.report.groupBy({
-          by: ["repoName"],
+          by: ["repoNames"],
           where: { userId },
-          _count: { repoName: true },
-          orderBy: { _count: { repoName: "desc" } },
+          _count: { repoNames: true },
+          orderBy: { _count: { repoNames: "desc" } },
           take: 5,
         }),
+
+        // Rapports par jour (30 derniers jours) pour le graph linéaire
+        prisma.report.groupBy({
+          by: ["createdAt"],
+          where: {
+            userId,
+            createdAt: {
+              gte: thirtyDaysAgo
+            }
+          },
+          _count: { id: true },
+        }),
+
+        // Rapports pour le calendrier (1 an)
+        prisma.report.groupBy({
+          by: ["createdAt"],
+          where: {
+            userId,
+            createdAt: {
+              gte: oneYearAgo
+            }
+          },
+          _count: { id: true },
+        })
       ]);
 
     // Formater les statistiques par méthode
@@ -449,17 +564,29 @@ export const getUserStats = async (
       }
     });
 
-    const mostUsedRepo = repoStats.length > 0 ? repoStats[0].repoName : null;
+    const mostUsedRepo = repoStats.length > 0 ? repoStats[0].repoNames.join(', ') : null;
+
+    // Helper pour grouper par date (YYYY-MM-DD)
+    const groupByDay = (data: any[]) => {
+      const map = new Map<string, number>();
+      data.forEach(item => {
+        const date = new Date(item.createdAt).toISOString().split('T')[0];
+        map.set(date, (map.get(date) || 0) + item._count.id);
+      });
+      return Array.from(map.entries()).map(([date, count]) => ({ date, count }));
+    };
 
     const stats = {
       totalReports,
       reportsByMethod: methodStats,
-      recentReports,
+      recentReports: recentReports.map((r: any) => ({ ...r, repoName: r.repoNames.join(', ') })), // Map to preserve frontend contract
       mostUsedRepo,
-      topRepositories: repoStats.map((stat) => ({
-        repoName: stat.repoName,
-        count: stat._count.repoName,
+      topRepositories: repoStats.map((stat: any) => ({
+        repoName: stat.repoNames.join(', '),
+        count: stat._count.repoNames,
       })),
+      dailyStats: groupByDay(dailyReports).sort((a, b) => a.date.localeCompare(b.date)),
+      calendarStats: groupByDay(calendarReports),
     };
 
     res.json({

@@ -20,6 +20,9 @@ import {
   X,
   Github,
   ChevronDown,
+  FileText,
+  Calendar,
+  Users,
 } from "lucide-vue-next";
 import Toast from "./ui/Toast.vue";
 
@@ -50,6 +53,24 @@ const navItems = [
     path: "/profile",
     icon: User,
     description: "Vos statistiques",
+  },
+  {
+    name: "Modèles",
+    path: "/templates",
+    icon: FileText,
+    description: "Modèles de rapports",
+  },
+  {
+    name: "Planification",
+    path: "/schedules",
+    icon: Calendar,
+    description: "Rapports automatiques",
+  },
+  {
+    name: "Équipes",
+    path: "/teams",
+    icon: Users,
+    description: "Collaboration",
   },
   {
     name: "Paramètres",
@@ -120,7 +141,7 @@ const handleLogout = async () => {
       >
         <div class="flex items-center gap-3">
           <div
-            class="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center shadow-lg shadow-purple-500/30"
+            class="w-8 h-8 bg-gradient-to-br from-red-600 to-red-700 rounded-lg flex items-center justify-center shadow-lg shadow-red-500/30"
           >
             <Github :size="18" class="text-white" />
           </div>
@@ -144,10 +165,11 @@ const handleLogout = async () => {
             v-for="item in navItems"
             :key="item.path"
             @click="navigateTo(item.path)"
+            :data-tour="item.name === 'Historique' ? 'history' : item.name === 'Paramètres' ? 'settings' : undefined"
             :class="[
               'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
               isActiveRoute(item.path)
-                ? 'bg-gradient-to-r from-purple-600/20 to-blue-600/20 border border-purple-500/30'
+                ? 'bg-gradient-to-r from-red-600/20 to-red-700/20 border border-red-500/30'
                 : 'hover:bg-zinc-800/50 dark:hover:bg-zinc-800/50',
             ]"
             :style="
@@ -161,7 +183,7 @@ const handleLogout = async () => {
               :size="18"
               :class="[
                 'flex-shrink-0',
-                isActiveRoute(item.path) ? 'text-purple-400' : '',
+                isActiveRoute(item.path) ? 'text-red-400' : '',
               ]"
             />
             <div class="flex-1 text-left">
@@ -186,7 +208,7 @@ const handleLogout = async () => {
             class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group hover:bg-zinc-800/50 dark:hover:bg-zinc-800/50"
           >
             <div
-              class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white text-sm font-medium"
+              class="w-8 h-8 rounded-full bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center text-white text-sm font-medium"
             >
               {{ user?.name?.charAt(0).toUpperCase() || "U" }}
             </div>
@@ -253,7 +275,7 @@ const handleLogout = async () => {
         </button>
         <div class="flex items-center gap-2">
           <div
-            class="w-7 h-7 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center shadow-lg shadow-purple-500/30"
+            class="w-7 h-7 bg-gradient-to-br from-red-600 to-red-700 rounded-lg flex items-center justify-center shadow-lg shadow-red-500/30"
           >
             <Github :size="14" class="text-white" />
           </div>
