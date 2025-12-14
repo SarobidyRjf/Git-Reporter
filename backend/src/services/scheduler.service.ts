@@ -295,11 +295,11 @@ class SchedulerService {
 
       // Générer le contenu du rapport
       let content: string;
-      if (schedule.template) {
-        content = templateService.renderTemplate(schedule.template.content, templateData);
+      if (schedule.reportTemplate) {
+        content = templateService.renderTemplate(schedule.reportTemplate.content, templateData);
         logger.info('📝 Report generated from template', { 
           templateId: schedule.templateId,
-          templateName: schedule.template.name,
+          templateName: schedule.reportTemplate.name,
           stats: { linesAdded: stats.linesAdded, linesRemoved: stats.linesRemoved }
         });
       } else {

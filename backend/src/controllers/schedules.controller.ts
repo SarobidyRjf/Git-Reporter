@@ -41,13 +41,8 @@ export const getSchedules = async (
     const schedules = await prisma.scheduledReport.findMany({
       where: { userId },
       include: {
-        ReportTemplate: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
-      },
+        reportTemplate: true
+      }
       orderBy: { createdAt: 'desc' }
     });
 
@@ -88,7 +83,7 @@ export const getSchedule = async (
     const schedule = await prisma.scheduledReport.findFirst({
       where: { id, userId },
       include: {
-        ReportTemplate: true
+        reportTemplate: true
       }
     });
 
@@ -160,7 +155,7 @@ export const createSchedule = async (
         isActive: true
       },
       include: {
-        ReportTemplate: true
+        reportTemplate: true
       }
     });
 
@@ -229,7 +224,7 @@ export const updateSchedule = async (
         nextRun
       },
       include: {
-        ReportTemplate: true
+        reportTemplate: true
       }
     });
 
@@ -338,7 +333,7 @@ export const toggleSchedule = async (
       where: { id },
       data: { isActive: newStatus },
       include: {
-        ReportTemplate: true
+        reportTemplate: true
       }
     });
 
