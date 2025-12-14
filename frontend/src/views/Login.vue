@@ -1,472 +1,306 @@
 <script setup lang="ts">
 /**
- * Page de connexion OAuth GitHub - Style harmonisé avec Landing
+ * Login Page - Theme "Velocity"
+ * Harmonized with Landing Page (Dark, Glassmorphism, Glows).
  */
-import { Loader2, Github, ArrowRight } from 'lucide-vue-next';
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth.store';
+import { Loader2, Github, ArrowRight, Terminal } from 'lucide-vue-next';
 
 const router = useRouter();
 const authStore = useAuthStore();
 
 const isLoading = ref(false);
 const error = ref<string | null>(null);
-const contentVisible = ref(false);
+const isVisible = ref(false);
 
 onMounted(() => {
   setTimeout(() => {
-    contentVisible.value = true;
+    isVisible.value = true;
   }, 100);
 });
 
-/**
- * Initie la connexion GitHub OAuth
- */
 async function handleGitHubLogin() {
   try {
     isLoading.value = true;
     error.value = null;
     await authStore.initiateLogin();
   } catch (err) {
-    console.error('Erreur de connexion:', err);
-    error.value = 'Impossible de se connecter. Veuillez réessayer.';
+    console.error('Login Error:', err);
+    error.value = 'Connection failed. Please try again.';
     isLoading.value = false;
   }
+}
+
+function handleBackToHome() {
+  router.push('/');
 }
 </script>
 
 <template>
   <div class="login-page">
-    <!-- Animated Grid Background -->
-    <div class="grid-bg">
-      <div class="grid-lines"></div>
-    </div>
+    <div class="noise-overlay"></div>
+    
+    <!-- Ambient Background Glows -->
+    <div class="ambient-glow glow-1"></div>
+    <div class="ambient-glow glow-2"></div>
 
-    <!-- Centered Moon at Bottom -->
-    <div class="moon-container">
-      <!-- SVG Curved Paths for Commits -->
-      <svg class="moon-curves" viewBox="0 0 1400 400" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="curveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" style="stop-color:rgba(220,38,38,0.3);stop-opacity:1" />
-            <stop offset="50%" style="stop-color:rgba(220,38,38,0.6);stop-opacity:1" />
-            <stop offset="100%" style="stop-color:rgba(220,38,38,0.3);stop-opacity:1" />
-          </linearGradient>
-        </defs>
-        <!-- Curved path 1 -->
-        <path id="curve1" d="M 0,150 Q 350,100 700,120 T 1400,150" 
-              stroke="url(#curveGradient)" stroke-width="1" fill="none" opacity="0.4"/>
-        <!-- Curved path 2 -->
-        <path id="curve2" d="M 0,200 Q 350,160 700,180 T 1400,200" 
-              stroke="url(#curveGradient)" stroke-width="1" fill="none" opacity="0.3"/>
-        <!-- Curved path 3 -->
-        <path id="curve3" d="M 0,250 Q 350,210 700,230 T 1400,250" 
-              stroke="url(#curveGradient)" stroke-width="1" fill="none" opacity="0.2"/>
-      </svg>
+    <div class="login-container" :class="{ 'visible': isVisible }">
       
-      <div class="moon-glow">
-        <!-- Animated Commit Particles on Curves -->
-        <div class="commit-particle commit-curve-1"></div>
-        <div class="commit-particle commit-curve-2"></div>
-        <div class="commit-particle commit-curve-3"></div>
-        <div class="commit-particle commit-curve-4"></div>
-        <div class="commit-particle commit-curve-5"></div>
-        <div class="commit-particle commit-curve-6"></div>
-      </div>
-    </div>
-
-    <!-- Login Content -->
-    <div class="login-content" :class="{ visible: contentVisible }">
-      <div class="login-header">
-        <h1 class="login-title">
-          <!-- Bienvenue sur<br />
-          Git Reporter -->
-        </h1>
-        <p class="login-subtitle">
-          Connectez-vous pour commencer à générer vos rapports
-        </p>
+      <!-- Brand Header -->
+      <div class="brand-header" @click="handleBackToHome">
+        <Terminal class="logo-icon" />
+        <span class="logo-text">Git Reporter<span class="dot">.</span></span>
       </div>
 
-      <!-- Login Button -->
-      <button
-        @click="handleGitHubLogin"
-        :disabled="isLoading"
-        class="btn-login"
-      >
-        <Loader2
-          v-if="isLoading"
-          :size="20"
-          class="animate-spin"
-        />
-        <Github
-          v-else
-          :size="20"
-        />
-        <span>
-          {{ isLoading ? 'Connexion en cours...' : 'Se connecter avec GitHub' }}
-        </span>
-        <ArrowRight v-if="!isLoading" :size="18" class="arrow" />
-      </button>
+      <!-- Login Card -->
+      <div class="login-card glass-panel">
+        <div class="card-glow"></div>
+        
+        <h1 class="login-title">Welcome Back</h1>
+        <p class="login-desc">Sign in to access your automated reporting dashboard.</p>
 
-      <!-- Error Message -->
-      <div
-        v-if="error"
-        class="error-message"
-      >
-        {{ error }}
+        <button 
+          @click="handleGitHubLogin" 
+          :disabled="isLoading" 
+          class="btn-primary full-width"
+        >
+          <Loader2 v-if="isLoading" class="animate-spin" />
+          <Github v-else class="icon" />
+          <span>{{ isLoading ? 'Connecting...' : 'Continue with GitHub' }}</span>
+          <ArrowRight v-if="!isLoading" class="icon-arrow" />
+        </button>
+
+        <div v-if="error" class="error-msg">
+          {{ error }}
+        </div>
+
+        <div class="divider">
+          <span>Secured by GitHub OAuth</span>
+        </div>
       </div>
+
     </div>
   </div>
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Parisienne&family=Playfair+Display:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap');
-
-/* Base */
+/* --- Tokens & Base --- */
 .login-page {
+  --bg-dark: #030712;
+  --bg-card: rgba(17, 24, 39, 0.7);
+  --primary: #3b82f6;
+  --secondary: #8b5cf6;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --glass-border: rgba(255, 255, 255, 0.08);
+  
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  font-family: 'Inter', sans-serif;
   min-height: 100vh;
-  background: #0a0a0f;
-  color: #ffffff;
-  font-family: 'Cormorant Garamond', 'Inter', serif;
   position: relative;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
 }
 
-/* Animated Grid Background */
-.grid-bg {
+/* --- Ambient Effects (Shared with Landing) --- */
+.noise-overlay {
   position: fixed;
   inset: 0;
-  z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+  opacity: 0.07;
   pointer-events: none;
-  opacity: 0.3;
-}
-
-.grid-lines {
-  position: absolute;
-  inset: 0;
-  background-image: 
-    linear-gradient(rgba(220, 38, 38, 0.1) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(220, 38, 38, 0.1) 1px, transparent 1px);
-  background-size: 100px 100px;
-  animation: gridMove 20s linear infinite;
-}
-
-@keyframes gridMove {
-  0% { transform: translate(0, 0); }
-  100% { transform: translate(100px, 100px); }
-}
-
-/* Centered Moon at Bottom */
-.moon-container {
-  position: fixed;
-  bottom: -15vh;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 1400px;
-  height: 50vh;
   z-index: 0;
-  pointer-events: none;
 }
 
-.moon-curves {
+.ambient-glow {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0.6;
-}
-
-.moon-glow {
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(
-    ellipse 140% 100% at center bottom,
-    rgba(220, 38, 38, 0.9) 0%,
-    rgba(220, 38, 38, 0.7) 20%,
-    rgba(220, 38, 38, 0.5) 40%,
-    rgba(220, 38, 38, 0.3) 60%,
-    rgba(220, 38, 38, 0.15) 80%,
-    transparent 100%
-  );
   border-radius: 50%;
-  animation: moonPulse 5s ease-in-out infinite;
-  position: relative;
-  filter: blur(1px);
+  filter: blur(120px);
+  z-index: 0;
+  opacity: 0.4;
+  animation: breathe 8s infinite alternate;
 }
 
-@keyframes moonPulse {
-  0%, 100% { 
-    opacity: 0.85;
-    transform: scale(1);
-  }
-  50% { 
-    opacity: 1;
-    transform: scale(1.01);
-  }
+.glow-1 {
+  width: 600px;
+  height: 600px;
+  background: var(--primary);
+  top: -20%;
+  left: -10%;
 }
 
-/* Commit Particles Following Curves */
-.commit-particle {
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  background: radial-gradient(circle, #fff 0%, #fca5a5 40%, #dc2626 100%);
-  border-radius: 50%;
-  box-shadow: 
-    0 0 20px rgba(255, 255, 255, 0.8),
-    0 0 40px rgba(220, 38, 38, 0.9),
-    0 0 60px rgba(220, 38, 38, 0.6);
-  filter: blur(0.5px);
-}
-
-.commit-curve-1 {
-  animation: followCurve1 12s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-.commit-curve-2 {
-  animation: followCurve2 15s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+.glow-2 {
+  width: 500px;
+  height: 500px;
+  background: var(--secondary);
+  bottom: -10%;
+  right: -10%;
   animation-delay: 2s;
 }
 
-.commit-curve-3 {
-  animation: followCurve3 10s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  animation-delay: 4s;
+@keyframes breathe {
+  0% { opacity: 0.3; transform: scale(1); }
+  100% { opacity: 0.5; transform: scale(1.1); }
 }
 
-.commit-curve-4 {
-  animation: followCurve1 13s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  animation-delay: 1s;
-}
-
-.commit-curve-5 {
-  animation: followCurve2 14s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  animation-delay: 5s;
-}
-
-.commit-curve-6 {
-  animation: followCurve3 11s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  animation-delay: 3s;
-}
-
-/* Curved Path Animations */
-@keyframes followCurve1 {
-  0% {
-    left: -5%;
-    top: 37.5%;
-    opacity: 0;
-    transform: scale(0.5);
-  }
-  5% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  25% {
-    top: 25%;
-  }
-  50% {
-    top: 30%;
-  }
-  75% {
-    top: 25%;
-  }
-  95% {
-    opacity: 1;
-  }
-  100% {
-    left: 105%;
-    top: 37.5%;
-    opacity: 0;
-    transform: scale(0.5);
-  }
-}
-
-@keyframes followCurve2 {
-  0% {
-    left: -5%;
-    top: 50%;
-    opacity: 0;
-    transform: scale(0.5);
-  }
-  5% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  25% {
-    top: 40%;
-  }
-  50% {
-    top: 45%;
-  }
-  75% {
-    top: 40%;
-  }
-  95% {
-    opacity: 1;
-  }
-  100% {
-    left: 105%;
-    top: 50%;
-    opacity: 0;
-    transform: scale(0.5);
-  }
-}
-
-@keyframes followCurve3 {
-  0% {
-    left: -5%;
-    top: 62.5%;
-    opacity: 0;
-    transform: scale(0.5);
-  }
-  5% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  25% {
-    top: 52.5%;
-  }
-  50% {
-    top: 57.5%;
-  }
-  75% {
-    top: 52.5%;
-  }
-  95% {
-    opacity: 1;
-  }
-  100% {
-    left: 105%;
-    top: 62.5%;
-    opacity: 0;
-    transform: scale(0.5);
-  }
-}
-
-/* Login Content */
-.login-content {
+/* --- Layout --- */
+.login-container {
   position: relative;
-  z-index: 1;
-  text-align: center;
-  max-width: 600px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
   opacity: 0;
-  transform: translateY(30px);
-  transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateY(20px);
+  transition: all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.login-content.visible {
+.login-container.visible {
   opacity: 1;
   transform: translateY(0);
 }
 
-.login-header {
-  margin-bottom: 3rem;
+.brand-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.brand-header:hover { opacity: 0.8; }
+.dot { color: var(--primary); }
+
+/* --- Card --- */
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 3rem 2.5rem;
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 1.5rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.card-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  opacity: 0.5;
 }
 
 .login-title {
-  font-size: clamp(2.5rem, 6vw, 5rem);
+  font-family: 'Outfit', sans-serif;
+  font-size: 2rem;
   font-weight: 700;
-  line-height: 1.15;
-  margin-bottom: 1.5rem;
-  letter-spacing: -0.02em;
-  font-family: 'Playfair Display', serif;
-  background: linear-gradient(180deg, #ffffff 0%, #fca5a5 60%, #dc2626 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-shadow: 0 0 40px rgba(220, 38, 38, 0.3);
-}
-
-.login-subtitle {
-  font-size: 1.25rem;
-  color: #d4d4d8;
-  line-height: 1.7;
-  font-weight: 400;
-  font-family: 'Cormorant Garamond', serif;
-  letter-spacing: 0.01em;
-}
-
-/* Login Button */
-.btn-login {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 1.125rem 2.5rem;
-  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-  border: none;
-  border-radius: 0.75rem;
+  margin-bottom: 0.75rem;
   color: white;
-  font-size: 1rem;
+}
+
+.login-desc {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin-bottom: 2.5rem;
+  line-height: 1.5;
+}
+
+/* --- Buttons --- */
+.btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.5rem;
+  border-radius: 0.75rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 20px rgba(220, 38, 38, 0.3);
-  font-family: 'Inter', sans-serif;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  font-size: 1rem;
+  background: linear-gradient(135deg, var(--primary), #2563eb);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  width: 100%;
+  position: relative;
+  overflow: hidden;
 }
 
-.btn-login:hover:not(:disabled) {
+.btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(220, 38, 38, 0.4);
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.5);
 }
 
-.btn-login:disabled {
-  opacity: 0.6;
+.btn-primary:disabled {
+  opacity: 0.7;
   cursor: not-allowed;
 }
 
-.arrow {
+.icon-arrow {
   transition: transform 0.3s ease;
 }
 
-.btn-login:hover .arrow {
+.btn-primary:hover .icon-arrow {
   transform: translateX(4px);
-}
-
-/* Animation pour le spinner */
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 .animate-spin {
   animation: spin 1s linear infinite;
 }
 
-/* Error Message */
-.error-message {
-  margin-top: 2rem;
-  padding: 1rem 1.5rem;
-  background: rgba(220, 38, 38, 0.1);
-  border: 1px solid rgba(220, 38, 38, 0.3);
-  border-radius: 0.75rem;
-  color: #fca5a5;
-  font-size: 0.9375rem;
-  font-family: 'Inter', sans-serif;
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .login-title {
-    font-size: 2.5rem;
-  }
-  
-  .login-subtitle {
-    font-size: 1.125rem;
-  }
-  
-  .btn-login {
-    padding: 1rem 2rem;
-    font-size: 0.9375rem;
-  }
+/* --- Divider --- */
+.divider {
+  margin-top: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.divider span {
+  padding: 0 1rem;
+}
+
+.error-msg {
+  margin-top: 1.5rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  font-size: 0.875rem;
 }
 </style>

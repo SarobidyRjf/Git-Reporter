@@ -63,6 +63,7 @@ const showPreview = ref(false);
 // Teams
 const userTeams = ref<any[]>([]);
 const selectedTeamId = ref<string>("");
+const showTeamSection = ref(false);
 
 function addRepoFromSelect() {
   if (currentRepoSelect.value) {
@@ -558,20 +559,42 @@ async function sendReport() {
                   </div>
 
                   <!-- Team Selection (Optional) -->
-                  <div class="space-y-4 pt-4 border-t border-zinc-800/50" v-if="userTeams.length > 0">
-                      <label class="text-sm font-medium text-zinc-300 flex items-center gap-2">
-                        <Users :size="16" class="text-purple-400" />
-                        Partager avec une équipe <span class="text-zinc-500 text-xs font-normal">(optionnel)</span>
-                      </label>
-                      <select
-                          v-model="selectedTeamId"
-                          class="w-full px-3 py-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-white appearance-none focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                  <div class="space-y-3 pt-4 border-t border-zinc-800/50" v-if="userTeams.length > 0">
+                      <div class="flex items-center justify-between">
+                        <label class="text-sm font-medium text-zinc-300 flex items-center gap-2">
+                          <Users :size="16" class="text-purple-400" />
+                          Partager avec une équipe <span class="text-zinc-500 text-xs font-normal">(optionnel)</span>
+                        </label>
+                        <button
+                          @click="showTeamSection = !showTeamSection"
+                          class="p-1.5 rounded-lg transition-colors flex items-center gap-1.5 text-xs"
+                          :class="showTeamSection ? 'bg-purple-500/20 text-purple-400' : 'bg-zinc-800 text-zinc-400 hover:text-zinc-300'"
+                          :title="showTeamSection ? 'Masquer' : 'Afficher'"
+                        >
+                          <Eye :size="14" />
+                          <span>{{ showTeamSection ? 'Masquer' : 'Afficher' }}</span>
+                        </button>
+                      </div>
+                      <transition
+                        enter-active-class="transition-all duration-200 ease-out"
+                        enter-from-class="opacity-0 max-h-0"
+                        enter-to-class="opacity-100 max-h-20"
+                        leave-active-class="transition-all duration-200 ease-in"
+                        leave-from-class="opacity-100 max-h-20"
+                        leave-to-class="opacity-0 max-h-0"
                       >
-                          <option value="">Aucune (Personnel)</option>
-                          <option v-for="team in userTeams" :key="team.id" :value="team.id">
-                              {{ team.name }}
-                          </option>
-                      </select>
+                        <div v-if="showTeamSection" class="overflow-hidden">
+                          <select
+                              v-model="selectedTeamId"
+                              class="w-full px-3 py-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-white appearance-none focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                          >
+                              <option value="">Aucune (Personnel)</option>
+                              <option v-for="team in userTeams" :key="team.id" :value="team.id">
+                                  {{ team.name }}
+                              </option>
+                          </select>
+                        </div>
+                      </transition>
                   </div>
                 </div>
               </div>
