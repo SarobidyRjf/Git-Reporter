@@ -42,7 +42,7 @@ export const getSchedules = async (
       where: { userId },
       include: {
         reportTemplate: true
-      }
+      },
       orderBy: { createdAt: 'desc' }
     });
 
