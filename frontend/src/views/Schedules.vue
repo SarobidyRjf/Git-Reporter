@@ -234,7 +234,7 @@ async function toggleSchedule(schedule: any) {
   try {
     const response = await api.toggleSchedule(schedule.id);
     if (response.success) {
-      showStatus('success', response.data.isActive ? 'Schedule activé !' : 'Schedule désactivé !');
+      showStatus('success', response.data?.isActive ? 'Schedule activé !' : 'Schedule désactivé !');
       await loadSchedules();
     }
   } catch (error: any) {

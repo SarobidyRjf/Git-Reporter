@@ -245,7 +245,7 @@ function navigateToLogin() {
     <footer class="footer">
       <div class="footer-content">
         <div class="footer-brand">
-          <Terminal size="20" />
+          <Terminal :size="20" />
           <span>Git Reporter</span>
         </div>
         <div class="footer-links">

@@ -109,7 +109,7 @@ async function loadProfileData() {
         averagePerWeek: Math.round(data.totalReports / 4), // Approximation
         longestStreak: 0, // Non disponible dans l'API actuelle
         repositoriesTracked: data.topRepositories.length,
-        lastReportDate: data.recentReports.length > 0 ? new Date(data.recentReports[0].createdAt) : new Date(),
+        lastReportDate: data.recentReports && data.recentReports.length > 0 ? new Date(data.recentReports[0].createdAt) : new Date(),
       };
 
       // Mapper l'activité récente
