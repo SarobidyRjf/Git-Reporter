@@ -25,4 +25,4 @@ ENV PORT=3000
 EXPOSE 3000
 
 # Commande de démarrage
-CMD ["npm", "start"]
+CMD npx prisma db push --accept-data-loss && npm start
