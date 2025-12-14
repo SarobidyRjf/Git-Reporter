@@ -54,7 +54,23 @@ const initializeApp = (): Application => {
   // CORS - Permet les requêtes depuis le frontend
   app.use(
     cors({
-      origin: config.frontendUrl,
+      origin: (requestOrigin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!requestOrigin) return callback(null, true);
+        
+        // Allow the configured frontend URL
+        if (requestOrigin === config.frontendUrl) return callback(null, true);
+        
+        // Allow Vercel preview deployments (any subdomain of vercel.app)
+        if (requestOrigin.endsWith('.vercel.app')) return callback(null, true);
+        
+        // Allow localhost in development
+        if (config.nodeEnv === 'development' && requestOrigin.includes('localhost')) {
+          return callback(null, true);
+        }
+
+        callback(new Error('Not allowed by CORS'));
+      },
       credentials: true,
       methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
       allowedHeaders: ["Content-Type", "Authorization"],
