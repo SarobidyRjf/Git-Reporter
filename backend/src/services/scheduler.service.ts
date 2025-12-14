@@ -46,7 +46,7 @@ class SchedulerService {
         where: { isActive: true },
         include: {
           user: true,
-          template: true
+          reportTemplate: true
         }
       });
 
@@ -165,7 +165,7 @@ class SchedulerService {
         where: { id: scheduleId },
         include: {
           user: true,
-          template: true
+          reportTemplate: true
         }
       });
 
@@ -335,7 +335,7 @@ class SchedulerService {
       await prisma.report.create({
         data: {
           userId: schedule.userId,
-          repoName: schedule.repoName,
+          repoNames: [schedule.repoName],
           content,
           sentTo: schedule.recipient,
           method: schedule.method

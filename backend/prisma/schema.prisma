@@ -67,7 +67,7 @@ model TeamMember {
 }
 
 model ReportTemplate {
-  id              String            @id
+  id              String            @id @default(cuid())
   userId          String
   name            String
   description     String?
@@ -75,15 +75,15 @@ model ReportTemplate {
   variables       Json
   isDefault       Boolean           @default(false)
   createdAt       DateTime          @default(now())
-  updatedAt       DateTime
-  User            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  updatedAt       DateTime          @updatedAt
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   ScheduledReport ScheduledReport[]
 
   @@index([userId])
 }
 
 model ScheduledReport {
-  id             String          @id
+  id             String          @id @default(cuid())
   userId         String
   templateId     String?
   repoName       String
@@ -94,9 +94,9 @@ model ScheduledReport {
   lastRun        DateTime?
   nextRun        DateTime?
   createdAt      DateTime        @default(now())
-  updatedAt      DateTime
-  ReportTemplate ReportTemplate? @relation(fields: [templateId], references: [id])
-  User           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  updatedAt      DateTime        @updatedAt
+  reportTemplate ReportTemplate? @relation(fields: [templateId], references: [id])
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([isActive])
   @@index([nextRun])
