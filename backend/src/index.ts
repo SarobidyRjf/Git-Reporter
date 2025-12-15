@@ -231,7 +231,11 @@ import emailService from "./services/email.service";
 
         return res.json({
           success: true,
-          message: "Email de test envoyé avec succès via SMTP !",
+          message: `Email de test envoyé ! (Mode Mock: ${config.email.mock ? 'OUI ⚠️' : 'NON ✅'})`,
+          data: {
+             mock: config.email.mock,
+             to
+          }
         });
       } catch (error) {
         logger.error("Failed to send test email", {
