@@ -200,7 +200,7 @@ async function saveSchedule() {
     }
   } catch (error: any) {
     console.error('❌ Erreur lors de la sauvegarde:', error);
-    showStatus('error', error.response?.data?.error?.message || error.response?.data?.message || 'Erreur lors de la sauvegarde');
+    showStatus('error', error.response?.data?.error?.message || error.response?.data?.message || error.message || 'Erreur lors de la sauvegarde');
   } finally {
     isSaving.value = false;
   }
@@ -222,7 +222,7 @@ async function deleteSchedule(schedule: any) {
     }
   } catch (error: any) {
     console.error('❌ Erreur lors de la suppression:', error);
-    showStatus('error', error.response?.data?.error?.message || error.response?.data?.message || 'Erreur lors de la suppression');
+    showStatus('error', error.response?.data?.error?.message || error.response?.data?.message || error.message || 'Erreur lors de la suppression');
   } finally {
     isDeleting.value = false;
   }
@@ -239,7 +239,7 @@ async function toggleSchedule(schedule: any) {
     }
   } catch (error: any) {
     console.error('❌ Erreur lors du toggle:', error);
-    showStatus('error', error.response?.data?.error?.message || error.response?.data?.message || 'Erreur lors du toggle');
+    showStatus('error', error.response?.data?.error?.message || error.response?.data?.message || error.message || 'Erreur lors du toggle');
   }
 }
 
@@ -255,7 +255,7 @@ async function runSchedule(schedule: any) {
     }
   } catch (error: any) {
     console.error('❌ Erreur lors de l\'exécution:', error);
-    showStatus('error', error.response?.data?.error?.message || error.response?.data?.message || 'Erreur lors de l\'exécution');
+    showStatus('error', error.response?.data?.error?.message || error.response?.data?.message || error.message || 'Erreur lors de l\'exécution');
   } finally {
     isRunning.value = null;
   }

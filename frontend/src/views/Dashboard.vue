@@ -393,7 +393,7 @@ async function sendReport() {
   } catch (error: any) {
     statusType.value = "error";
     statusMessage.value = `✗ Erreur: ${
-      error.response?.data?.error?.message || error.response?.data?.message || "Impossible d'envoyer le rapport"
+      error.response?.data?.error?.message || error.response?.data?.message || error.message || "Impossible d'envoyer le rapport"
     }`;
   } finally {
     isSendingReport.value = false;
