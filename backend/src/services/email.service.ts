@@ -66,12 +66,16 @@ export class EmailService {
         maxMessages: 100,
         rateDelta: 1000,
         rateLimit: 5,
+        rateLimit: 5,
         // Timeouts pour éviter de bloquer indéfiniment
-        connectionTimeout: 10000, // 10 secondes
-        greetingTimeout: 10000,
-        socketTimeout: 10000, 
+        connectionTimeout: 30000, // 30 secondes
+        greetingTimeout: 30000,
+        socketTimeout: 30000, 
         // Force IPv4 pour éviter les problèmes de réseau sur certains conteneurs
         family: 4,
+        tls: {
+          rejectUnauthorized: false
+        }
       } as any);
 
       // Vérifie la connexion SMTP au démarrage
@@ -80,7 +84,7 @@ export class EmailService {
       logger.info('Email service initialized', {
         host: config.email.host,
         port: config.email.port,
-        secure: config.email.secure,
+        secure: config.email.secure, // Affiche si SSL est activé
         user: config.email.user,
       });
     }
