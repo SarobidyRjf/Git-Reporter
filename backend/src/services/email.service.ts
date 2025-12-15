@@ -52,40 +52,34 @@ export class EmailService {
       });
       logger.warn('⚠️ Email service initialized in MOCK MODE. Emails will be logged but NOT sent.');
     } else {
+      // Configuration optimisée pour Gmail
+      // Utilisation du profil "service: 'Gmail'" qui gère automatiquement les ports et la sécurité
       this.transporter = nodemailer.createTransport({
-        host: config.email.host,
-        port: config.email.port,
-        secure: config.email.secure, // true pour 465, false pour autres ports
+        service: 'Gmail',
         auth: {
           user: config.email.user,
           pass: config.email.password,
         },
-        // Options supplémentaires pour améliorer la fiabilité
-        pool: true,
-        maxConnections: 5,
-        maxMessages: 100,
-        rateDelta: 1000,
-        rateLimit: 5,
-
-        // Timeouts pour éviter de bloquer indéfiniment
-        connectionTimeout: 30000, // 30 secondes
-        greetingTimeout: 30000,
-        socketTimeout: 30000, 
-        // Force IPv4 pour éviter les problèmes de réseau sur certains conteneurs
-        family: 4,
-        tls: {
-          rejectUnauthorized: false
-        }
+        // IMPORTANT: Désactiver le pooling pour Gmail sur les environnements serverless/cloud
+        // Gmail ferme les connexions inactives rapidement, ce qui cause des timeouts avec le pooling
+        pool: false, 
+        
+        // Debugging logs
+        debug: true,
+        logger: true,
+        
+        // Timeouts raisonnables
+        connectionTimeout: 10000, 
+        greetingTimeout: 10000, 
       } as any);
 
       // Vérifie la connexion SMTP au démarrage
       this.verifyConnection();
 
       logger.info('Email service initialized', {
-        host: config.email.host,
-        port: config.email.port,
-        secure: config.email.secure, // Affiche si SSL est activé
+        service: 'Gmail',
         user: config.email.user,
+        pooling: false
       });
     }
   }
