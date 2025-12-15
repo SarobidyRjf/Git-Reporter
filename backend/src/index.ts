@@ -212,7 +212,8 @@ const initializeApp = (): Application => {
    * Routes de test pour l'envoi d'emails et WhatsApp
    * À utiliser uniquement en développement
    */
-  if (config.nodeEnv === "development") {
+  // Route de test activée temporairement en Production pour debug
+  // if (config.nodeEnv === "development") {
   if (true) {
     app.post("/api/test/email", async (req, res) => {
       try {
