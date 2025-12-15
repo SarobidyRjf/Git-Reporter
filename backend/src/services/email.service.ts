@@ -73,6 +73,9 @@ export class EmailService {
         greetingTimeout: 60000, 
         socketTimeout: 60000,
         
+        // CRUCIAL: Forcer IPv4 (Gmail déconne souvent en IPv6 sur Docker)
+        family: 4,
+        
         tls: {
           rejectUnauthorized: false // Permet de contourner certains problèmes de certificats
         }
@@ -82,12 +85,11 @@ export class EmailService {
       this.verifyConnection();
 
       logger.info('Email service initialized', {
+        deployment_id: 'FIX_IPV4_FORCE_UPDATE',
         strategy: 'STARTTLS (587)',
         host: 'smtp.gmail.com',
-        port: 587,
-        secure: false,
+        family: 'IPv4',
         user: config.email.user,
-        timeout: '60s'
       });
     }
   }
