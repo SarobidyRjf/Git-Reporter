@@ -41,6 +41,8 @@ import schedulesRoutes from "./routes/schedules.routes";
 import teamsRoutes from "./routes/teams.routes";
 import logger from "./utils/logger";
 
+import emailService from "./services/email.service";
+
 /**
  * Initialise et configure l'application Express
  */
@@ -211,10 +213,7 @@ const initializeApp = (): Application => {
    * À utiliser uniquement en développement
    */
   if (config.nodeEnv === "development") {
-import emailService from "./services/email.service";
-
-// ... (existing imports)
-
+  if (true) {
     app.post("/api/test/email", async (req, res) => {
       try {
         const { to } = req.body;
