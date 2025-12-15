@@ -211,6 +211,10 @@ const initializeApp = (): Application => {
    * À utiliser uniquement en développement
    */
   if (config.nodeEnv === "development") {
+import emailService from "./services/email.service";
+
+// ... (existing imports)
+
     app.post("/api/test/email", async (req, res) => {
       try {
         const { to } = req.body;
@@ -222,15 +226,20 @@ const initializeApp = (): Application => {
           });
         }
 
-        // TODO: Implémenter l'envoi de test
+        logger.info(`🧪 Sending TEST email to ${to}`);
+        await emailService.sendTestEmail(to);
+
         return res.json({
           success: true,
-          message: "Test email endpoint",
+          message: "Email de test envoyé avec succès via SMTP !",
         });
       } catch (error) {
+        logger.error("Failed to send test email", {
+          error: error instanceof Error ? error.message : "Unknown error"
+        });
         return res.status(500).json({
           success: false,
-          error: { message: "Failed to send test email" },
+          error: { message: error instanceof Error ? error.message : "Failed to send test email" },
         });
       }
     });
