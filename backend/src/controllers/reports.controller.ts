@@ -329,67 +329,45 @@ export const createReport = async (
 
     logDatabase("CREATE", "Report", { reportId: report.id, userId });
 
-    // Envoyer le rapport selon la méthode choisie
-    let sendSuccess = false;
-
-    try {
-      if (method === ReportMethod.EMAIL) {
-        await emailService.sendReport({
-          to: sentTo,
-          reportContent: content,
-          repoName: finalRepoNames.join(', '),
-          reportId: report.id,
-        });
-        sendSuccess = true;
-        logger.info("Report sent successfully via email", {
-          reportId: report.id,
-          to: sentTo,
-        });
-      } else if (method === ReportMethod.WHATSAPP) {
-        if (!whatsappService.isAvailable()) {
-          throw new ValidationError(
-            "Le service WhatsApp n'est pas configuré",
-          );
+    // Exécution ASYNCHRONE (Fire-and-forget) pour ne pas bloquer le client
+    // On n'attend pas la fin de l'envoi pour répondre au frontend
+    (async () => {
+      try {
+        if (method === ReportMethod.EMAIL) {
+          await emailService.sendReport({
+            to: sentTo,
+            reportContent: content,
+            repoName: finalRepoNames.join(', '),
+            reportId: report.id,
+          });
+          logger.info("Report sent successfully via email (Async)", { reportId: report.id });
+        } else if (method === ReportMethod.WHATSAPP) {
+          if (!whatsappService.isAvailable()) {
+             logger.warn("WhatsApp service not available for report", { reportId: report.id });
+             return;
+          }
+          await whatsappService.sendReport({
+            to: sentTo,
+            reportContent: content,
+            repoName: finalRepoNames.join(', '),
+            reportId: report.id,
+          });
+          logger.info("Report sent successfully via WhatsApp (Async)", { reportId: report.id });
         }
-
-        await whatsappService.sendReport({
-          to: sentTo,
-          reportContent: content,
-          repoName: finalRepoNames.join(', '),
-          reportId: report.id,
+      } catch (sendError) {
+        // Log l'erreur mais ne crash pas, car la réponse est déjà partie
+        logger.error("Async send failed", {
+          error: sendError instanceof Error ? sendError.message : "Unknown error",
+          reportId: report.id
         });
-        sendSuccess = true;
-        logger.info("Report sent successfully via WhatsApp", {
-          reportId: report.id,
-          to: sentTo,
-        });
+        // TODO: Mettre à jour le statut du rapport en 'FAILED' dans la DB si on avait un champ status
       }
-    } catch (sendError) {
-      logger.error("Failed to send report", {
-        error: sendError instanceof Error ? sendError.message : "Unknown error",
-        reportId: report.id,
-        method,
-      });
-
-      // Le rapport est créé mais l'envoi a échoué
-      res.status(500).json({
-        success: false,
-        error: {
-          message: `Le rapport a été créé mais l'envoi a échoué: ${
-            sendError instanceof Error ? sendError.message : "Erreur inconnue"
-          }`,
-          code: "SEND_FAILED",
-          reportId: report.id,
-        },
-        timestamp: new Date().toISOString(),
-      });
-      return;
-    }
+    })();
 
     res.status(201).json({
       success: true,
       data: { ...report, repoName: report.repoNames.join(', ') },
-      message: `Rapport créé et envoyé avec succès via ${method}`,
+      message: `Rapport créé ! L'envoi est en cours de traitement...`, // Message mis à jour
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

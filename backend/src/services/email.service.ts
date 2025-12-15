@@ -61,11 +61,17 @@ export class EmailService {
           pass: config.email.password,
         },
         // Options supplémentaires pour améliorer la fiabilité
-        pool: true, // Utilise un pool de connexions
+        pool: true,
         maxConnections: 5,
         maxMessages: 100,
-        rateDelta: 1000, // Limite le taux d'envoi
-        rateLimit: 5, // 5 messages par seconde max
+        rateDelta: 1000,
+        rateLimit: 5,
+        // Timeouts pour éviter de bloquer indéfiniment
+        connectionTimeout: 10000, // 10 secondes
+        greetingTimeout: 10000,
+        socketTimeout: 10000, 
+        // Force IPv4 pour éviter les problèmes de réseau sur certains conteneurs
+        family: 4,
       });
 
       // Vérifie la connexion SMTP au démarrage
