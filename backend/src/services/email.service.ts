@@ -72,7 +72,7 @@ export class EmailService {
         socketTimeout: 10000, 
         // Force IPv4 pour éviter les problèmes de réseau sur certains conteneurs
         family: 4,
-      });
+      } as any);
 
       // Vérifie la connexion SMTP au démarrage
       this.verifyConnection();
