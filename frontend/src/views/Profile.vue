@@ -128,35 +128,6 @@ async function loadProfileData() {
   }
 }
 
-// Logic pour le test d'email
-import { Loader2 } from 'lucide-vue-next';
-import { useToast } from '../composables/useToast';
-const { success, error: showError } = useToast();
-const isTestingEmail = ref(false);
-
-async function sendTestEmail() {
-  let emailToTest = authStore.user?.email;
-
-  if (!emailToTest) {
-    // Si pas d'email (compte GitHub privé), on demande à l'utilisateur
-    const manualEmail = prompt("Aucune adresse email trouvée sur votre profil GitHub.\n\nEntrez l'adresse email où envoyer le test :");
-    if (!manualEmail) return;
-    emailToTest = manualEmail;
-  }
-  
-  if(!confirm(`Envoyer un email de test à ${emailToTest} ?`)) return;
-
-  isTestingEmail.value = true;
-  try {
-    await api.sendTestEmail(emailToTest);
-    success("Email de test envoyé avec succès ! Vérifiez votre boîte de réception.");
-  } catch (err: any) {
-    console.error("Test email fail:", err);
-    showError(err.response?.data?.error?.message || err.message || "Échec du test d'email");
-  } finally {
-    isTestingEmail.value = false;
-  }
-}
 </script>
 
 <template>
@@ -233,17 +204,7 @@ async function sendTestEmail() {
                 </div>
               </div>
               
-              <!-- Bouton de test email -->
-              <button
-                @click="sendTestEmail"
-                :disabled="isTestingEmail"
-                class="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-400 rounded-lg text-xs transition-colors"
-                title="Envoyer un email de test pour vérifier la configuration"
-              >
-                <Mail v-if="!isTestingEmail" :size="14" />
-                <Loader2 v-else :size="14" class="animate-spin" />
-                <span>{{ isTestingEmail ? 'Test en cours...' : 'Tester l\'envoi d\'email' }}</span>
-              </button>
+
             </div>
           </div>
         </div>
