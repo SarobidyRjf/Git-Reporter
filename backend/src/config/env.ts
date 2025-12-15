@@ -47,6 +47,9 @@ interface EnvConfig {
     secure: boolean;
     user: string;
     password: string;
+    resendApiKey: string;
+    fromName: string;
+    fromEmail: string;
     mock: boolean;
   };
 
@@ -124,7 +127,11 @@ export const config: EnvConfig = {
     secure: process.env.EMAIL_SECURE === 'true',
     user: process.env.EMAIL_USER || '',
     password: process.env.EMAIL_PASSWORD || '',
-    mock: process.env.EMAIL_MOCK === 'true' || !process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD,
+    // Resend configuration
+    resendApiKey: process.env.RESEND_API_KEY || '',
+    fromName: process.env.EMAIL_FROM_NAME || 'Git Reporter',
+    fromEmail: process.env.EMAIL_FROM_EMAIL || 'onboarding@resend.dev', // Email par défaut de Resend
+    mock: process.env.EMAIL_MOCK === 'true',
   },
 
   twilio: {
