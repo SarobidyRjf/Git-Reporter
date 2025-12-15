@@ -66,7 +66,7 @@ export class EmailService {
         maxMessages: 100,
         rateDelta: 1000,
         rateLimit: 5,
-        rateLimit: 5,
+
         // Timeouts pour éviter de bloquer indéfiniment
         connectionTimeout: 30000, // 30 secondes
         greetingTimeout: 30000,
