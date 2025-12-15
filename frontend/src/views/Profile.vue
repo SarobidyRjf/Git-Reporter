@@ -135,16 +135,20 @@ const { success, error: showError } = useToast();
 const isTestingEmail = ref(false);
 
 async function sendTestEmail() {
-  if (!authStore.user?.email) {
-    showError("Aucun email associé à ce compte");
-    return;
+  let emailToTest = authStore.user?.email;
+
+  if (!emailToTest) {
+    // Si pas d'email (compte GitHub privé), on demande à l'utilisateur
+    const manualEmail = prompt("Aucune adresse email trouvée sur votre profil GitHub.\n\nEntrez l'adresse email où envoyer le test :");
+    if (!manualEmail) return;
+    emailToTest = manualEmail;
   }
   
-  if(!confirm(`Envoyer un email de test à ${authStore.user.email} ?`)) return;
+  if(!confirm(`Envoyer un email de test à ${emailToTest} ?`)) return;
 
   isTestingEmail.value = true;
   try {
-    await api.sendTestEmail(authStore.user.email);
+    await api.sendTestEmail(emailToTest);
     success("Email de test envoyé avec succès ! Vérifiez votre boîte de réception.");
   } catch (err: any) {
     console.error("Test email fail:", err);
