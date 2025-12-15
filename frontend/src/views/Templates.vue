@@ -148,7 +148,7 @@ async function saveTemplate() {
     }
   } catch (error: any) {
     console.error('❌ Erreur lors de la sauvegarde:', error);
-    showError(error.response?.data?.message || 'Erreur lors de la sauvegarde');
+    showError(error.response?.data?.error?.message || error.response?.data?.message || 'Erreur lors de la sauvegarde');
   } finally {
     isSaving.value = false;
   }
@@ -170,7 +170,7 @@ async function deleteTemplate(template: any) {
     }
   } catch (error: any) {
     console.error('❌ Erreur lors de la suppression:', error);
-    showError(error.response?.data?.message || 'Erreur lors de la suppression');
+    showError(error.response?.data?.error?.message || error.response?.data?.message || 'Erreur lors de la suppression');
   } finally {
     isDeleting.value = false;
   }
