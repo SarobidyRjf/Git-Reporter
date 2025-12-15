@@ -52,40 +52,42 @@ export class EmailService {
       });
       logger.warn('⚠️ Email service initialized in MOCK MODE. Emails will be logged but NOT sent.');
     } else {
-      // Configuration manuelle robuste (Évite "service: Gmail" qui cache trop de détails)
+      // Strategie B: Port 587 (STARTTLS) - Souvent mieux toléré par les pare-feux cloud
       this.transporter = nodemailer.createTransport({
         host: 'smtp.gmail.com',
-        // Port 465 (SSL) est le plus fiable sur le Cloud. Sinon 587.
-        port: 465,
-        secure: true, // VRAI SSL dès le début
+        port: 587,
+        secure: false, // false pour 587 (STARTTLS)
         auth: {
           user: config.email.user,
           pass: config.email.password,
         },
-        // IMPORTANT: Désactiver le pooling pour Gmail sur les environnements serverless/cloud
-        // Gmail ferme les connexions inactives rapidement, ce qui cause des timeouts avec le pooling
+        // IMPORTANT: Désactiver le pooling pour éviter les timeouts
         pool: false, 
         
         // Debugging logs
         debug: true,
         logger: true,
         
-        // Timeouts raisonnables
-        connectionTimeout: 10000, 
-        greetingTimeout: 10000, 
+        // Timeouts très larges pour le cloud
+        connectionTimeout: 60000, 
+        greetingTimeout: 60000, 
+        socketTimeout: 60000,
+        
+        tls: {
+          rejectUnauthorized: false // Permet de contourner certains problèmes de certificats
+        }
       } as any);
 
       // Vérifie la connexion SMTP au démarrage
       this.verifyConnection();
 
       logger.info('Email service initialized', {
+        strategy: 'STARTTLS (587)',
         host: 'smtp.gmail.com',
-        port: 465,
-        secure: true,
+        port: 587,
+        secure: false,
         user: config.email.user,
-        pooling: false,
-        system: process.platform, // Affiche l'OS pour confirmer le switch vers Debian
-        node: process.version
+        timeout: '60s'
       });
     }
   }
