@@ -127,6 +127,32 @@ async function loadProfileData() {
     isLoading.value = false;
   }
 }
+
+// Logic pour le test d'email
+import { Loader2 } from 'lucide-vue-next';
+import { useToast } from '../composables/useToast';
+const { success, error: showError } = useToast();
+const isTestingEmail = ref(false);
+
+async function sendTestEmail() {
+  if (!authStore.user?.email) {
+    showError("Aucun email associé à ce compte");
+    return;
+  }
+  
+  if(!confirm(`Envoyer un email de test à ${authStore.user.email} ?`)) return;
+
+  isTestingEmail.value = true;
+  try {
+    await api.sendTestEmail(authStore.user.email);
+    success("Email de test envoyé avec succès ! Vérifiez votre boîte de réception.");
+  } catch (err: any) {
+    console.error("Test email fail:", err);
+    showError(err.response?.data?.error?.message || err.message || "Échec du test d'email");
+  } finally {
+    isTestingEmail.value = false;
+  }
+}
 </script>
 
 <template>
@@ -190,16 +216,30 @@ async function loadProfileData() {
               </div>
             </div>
 
-            <!-- Badges -->
-            <div class="flex flex-wrap gap-2">
-              <div
-                class="px-4 py-2 bg-purple-500/20 border border-purple-500/30 rounded-lg flex items-center gap-2"
-              >
-                <Award :size="16" class="text-purple-400" />
-                <span class="text-sm font-medium text-purple-300">
-                  Utilisateur actif
-                </span>
+            <!-- Badges & Actions -->
+            <div class="flex flex-col items-end gap-2">
+              <div class="flex flex-wrap gap-2">
+                <div
+                  class="px-4 py-2 bg-purple-500/20 border border-purple-500/30 rounded-lg flex items-center gap-2"
+                >
+                  <Award :size="16" class="text-purple-400" />
+                  <span class="text-sm font-medium text-purple-300">
+                    Utilisateur actif
+                  </span>
+                </div>
               </div>
+              
+              <!-- Bouton de test email -->
+              <button
+                @click="sendTestEmail"
+                :disabled="isTestingEmail"
+                class="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-400 rounded-lg text-xs transition-colors"
+                title="Envoyer un email de test pour vérifier la configuration"
+              >
+                <Mail v-if="!isTestingEmail" :size="14" />
+                <Loader2 v-else :size="14" class="animate-spin" />
+                <span>{{ isTestingEmail ? 'Test en cours...' : 'Tester l\'envoi d\'email' }}</span>
+              </button>
             </div>
           </div>
         </div>

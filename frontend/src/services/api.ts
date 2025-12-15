@@ -435,6 +435,20 @@ class ApiService {
       );
     return response.data;
   }
+
+  // ============================================================================
+  // TEST
+  // ============================================================================
+
+  async sendTestEmail(email: string) {
+    try {
+      const response = await this.api.post('/api/test/email', { to: email });
+      return response.data;
+    } catch (error) {
+       console.error('Test email failed', error);
+       throw error;
+    }
+  }
 }
 
 // Export d'une instance singleton

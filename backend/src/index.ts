@@ -308,7 +308,9 @@ const startServer = async (): Promise<void> => {
       logger.info(`📚 API documentation: http://localhost:${config.port}/`);
 
       // Affiche les URLs importantes
-      if (config.nodeEnv === "development") {
+   // Route de test activée temporairement en Production pour debug
+  // if (config.nodeEnv === "development") {
+  if (true) {
         logger.info("🔧 Development mode - Additional endpoints available");
         logger.info(
           `   Test Email: http://localhost:${config.port}/api/test/email`,
