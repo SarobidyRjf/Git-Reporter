@@ -52,10 +52,12 @@ export class EmailService {
       });
       logger.warn('⚠️ Email service initialized in MOCK MODE. Emails will be logged but NOT sent.');
     } else {
-      // Configuration optimisée pour Gmail
-      // Utilisation du profil "service: 'Gmail'" qui gère automatiquement les ports et la sécurité
+      // Configuration manuelle robuste (Évite "service: Gmail" qui cache trop de détails)
       this.transporter = nodemailer.createTransport({
-        service: 'Gmail',
+        host: 'smtp.gmail.com',
+        // Port 465 (SSL) est le plus fiable sur le Cloud. Sinon 587.
+        port: 465,
+        secure: true, // VRAI SSL dès le début
         auth: {
           user: config.email.user,
           pass: config.email.password,
@@ -77,9 +79,13 @@ export class EmailService {
       this.verifyConnection();
 
       logger.info('Email service initialized', {
-        service: 'Gmail',
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
         user: config.email.user,
-        pooling: false
+        pooling: false,
+        system: process.platform, // Affiche l'OS pour confirmer le switch vers Debian
+        node: process.version
       });
     }
   }

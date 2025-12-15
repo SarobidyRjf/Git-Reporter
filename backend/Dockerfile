@@ -1,5 +1,8 @@
-# Utiliser une image Node.js légère
-FROM node:20-alpine
+# Utiliser une image Node.js Debian-based plus robuste pour le réseau/DNS
+FROM node:20-slim
+
+# Installer OpenSSL (requis pour Prisma et certaines connexions SSL)
+RUN apt-get update -y && apt-get install -y openssl ca-certificates
 
 # Créer le dossier de travail
 WORKDIR /app
