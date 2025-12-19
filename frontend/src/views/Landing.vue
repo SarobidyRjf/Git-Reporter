@@ -1,104 +1,115 @@
 <script setup lang="ts">
 /**
- * Landing Page - Theme "Velocity"
- * High-end SaaS Aesthetic: Deep space, glowing orbs, glassmorphism, bento-grid.
+ * Landing Page - Style Resend
+ * Design minimaliste et élégant pour développeurs
  */
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { 
   Github, 
   ArrowRight, 
-  Zap, 
-  Shield, 
-  Clock, 
-  BarChart3, 
-  CheckCircle2, 
-  Code2, 
-  Terminal 
+  Mail,
+  MessageSquare,
+  Calendar,
+  FileText,
+  Clock,
+  Users,
+  CheckCircle2,
+  Terminal,
+  ExternalLink,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-vue-next';
 
 const router = useRouter();
-const isLoaded = ref(false);
+
+// Carousel state
+const currentSlide = ref(0);
+const slides = [
+  { src: '/app-dashboard.png', alt: 'Dashboard - Créer un rapport' },
+  { src: '/app-schedules.png', alt: 'Planification - Rapports automatisés' },
+  { src: '/app-analytics.png', alt: 'Analytics - Activité et statistiques' }
+];
+let carouselInterval: number | null = null;
 
 onMounted(() => {
-  // Trigger entry animations
-  setTimeout(() => {
-    isLoaded.value = true;
-  }, 100);
-
-  // Intersection Observer for scroll reveal
+  // Intersection Observer for scroll animations
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
-        entry.target.classList.add('reveal');
+        entry.target.classList.add('visible');
       }
     });
   }, { threshold: 0.1 });
 
-  document.querySelectorAll('.scroll-reveal').forEach(el => observer.observe(el));
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+  // Start carousel auto-play
+  startCarousel();
 });
 
-// Mouse interact for Hero 3D Tilt
-const heroVisual = ref<HTMLElement | null>(null);
-const codeWindow = ref<HTMLElement | null>(null);
+onUnmounted(() => {
+  stopCarousel();
+});
 
-function handleMouseMove(e: MouseEvent) {
-  if (!heroVisual.value || !codeWindow.value) return;
-  
-  const rect = heroVisual.value.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-  
-  // Normalize -1 to 1
-  const centerX = rect.width / 2;
-  const centerY = rect.height / 2;
-  
-  const rotateX = ((y - centerY) / centerY) * -10; // Max 10deg
-  const rotateY = ((x - centerX) / centerX) * 10;
-  
-  codeWindow.value.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
+function startCarousel() {
+  carouselInterval = window.setInterval(() => {
+    nextSlide();
+  }, 4000); // Change slide every 4 seconds
 }
 
-function handleMouseLeave() {
-  if (!codeWindow.value) return;
-  codeWindow.value.style.transform = `perspective(1000px) rotateX(10deg) rotateY(0deg) scale(0.95)`;
+function stopCarousel() {
+  if (carouselInterval) {
+    clearInterval(carouselInterval);
+    carouselInterval = null;
+  }
+}
+
+function nextSlide() {
+  currentSlide.value = (currentSlide.value + 1) % slides.length;
+}
+
+function prevSlide() {
+  currentSlide.value = (currentSlide.value - 1 + slides.length) % slides.length;
+}
+
+function goToSlide(index: number) {
+  currentSlide.value = index;
+  stopCarousel();
+  startCarousel(); // Restart auto-play
 }
 
 const features = [
   { 
-    icon: Zap, 
-    title: 'Lightning Fast', 
-    desc: 'Generate comprehensive reports in milliseconds. Engine optimized for large repositories.',
-    class: 'col-span-12 md:col-span-8',
-    gradient: 'from-blue-500/20 to-cyan-500/20'
+    icon: Github, 
+    title: 'Connexion GitHub', 
+    desc: 'Authentification OAuth sécurisée. Accédez à vos dépôts en toute sécurité.'
   },
   { 
-    icon: Shield, 
-    title: 'Enterprise Grade', 
-    desc: 'Bank-level encryption with OAuth 2.0. Your data never leaves your secure context.',
-    class: 'col-span-12 md:col-span-4',
-    gradient: 'from-purple-500/20 to-pink-500/20'
+    icon: FileText, 
+    title: 'Génération automatique', 
+    desc: 'Récupération intelligente des commits et formatage professionnel.'
+  },
+  { 
+    icon: Mail, 
+    title: 'Envoi Email', 
+    desc: 'Templates HTML élégants envoyés via Nodemailer.'
+  },
+  { 
+    icon: MessageSquare, 
+    title: 'WhatsApp', 
+    desc: 'Notifications instantanées via Twilio WhatsApp API.'
+  },
+  { 
+    icon: Calendar, 
+    title: 'Planification', 
+    desc: 'Rapports automatiques programmés à votre rythme.'
   },
   { 
     icon: Clock, 
-    title: 'Auto-Pilot', 
-    desc: 'Set it and forget it. Scheduled reporting via Cron-like precision without the headache.',
-    class: 'col-span-12 md:col-span-4',
-    gradient: 'from-amber-500/20 to-orange-500/20'
-  },
-  { 
-    icon: BarChart3, 
-    title: 'Deep Analytics', 
-    desc: 'Visualize team velocity, impact, and code churn with stunning interactive charts.',
-    class: 'col-span-12 md:col-span-8',
-    gradient: 'from-emerald-500/20 to-teal-500/20'
+    title: 'Historique', 
+    desc: 'Consultez tous vos rapports envoyés en un clin d\'œil.'
   }
-];
-
-const steps = [
-  { num: '01', title: 'Connect', desc: 'Link your GitHub repositories securely.' },
-  { num: '02', title: 'Configure', desc: 'Select templates and schedule frequency.' },
-  { num: '03', title: 'Deploy', desc: 'Receive automated insights instantly.' }
 ];
 
 function navigateToLogin() {
@@ -107,105 +118,120 @@ function navigateToLogin() {
 </script>
 
 <template>
-  <div class="landing-page">
-    <div class="noise-overlay"></div>
-    
-    <!-- Ambient Background Glows -->
-    <div class="ambient-glow glow-1"></div>
-    <div class="ambient-glow glow-2"></div>
-
+  <div class="landing">
+    <!-- Animated Background Effects -->
+    <div class="beam-background"></div>
+    <div class="radial-glow glow-top"></div>
+    <div class="radial-glow glow-bottom"></div>
     <!-- Navigation -->
-    <nav class="nav glass-panel">
+    <nav class="nav">
       <div class="nav-container">
         <div class="logo">
-          <Terminal class="logo-icon" />
-          <span class="logo-text">Git Reporter<span class="dot">.</span></span>
+          <Terminal :size="24" />
+          <span>Git Reporter</span>
         </div>
-        <div class="nav-actions">
-          <button @click="navigateToLogin" class="btn-ghost">Sign In</button>
-          <button @click="navigateToLogin" class="btn-primary small">
-            Get Started
-          </button>
+        <div class="nav-links">
+          <button @click="navigateToLogin" class="btn-ghost">Connexion</button>
         </div>
       </div>
     </nav>
 
     <!-- Hero Section -->
     <section class="hero">
-      <div class="hero-content">
-        <div class="status-pill slide-up-1">
-          <div class="status-dot"></div>
-          <span>v2.0 Now Available</span>
-        </div>
-        
-        <h1 class="hero-title slide-up-2">
-          Stop Writing Reports.<br>
-          <span class="text-gradient">Start Shipping Code.</span>
+      <div class="container">
+        <h1 class="hero-title fade-in">
+          Rapports Git pour<br>développeurs
         </h1>
         
-        <p class="hero-desc slide-up-3">
-          The autonomous reporting engine for high-performance engineering teams. 
-          Turn commits into stunning insights, automatically.
+        <p class="hero-desc fade-in">
+          Générez et envoyez automatiquement vos rapports de commits.<br>
+          Gagnez du temps, concentrez-vous sur le code.
         </p>
         
-        <div class="hero-cta slide-up-4">
-          <button @click="navigateToLogin" class="btn-primary magnetic">
-            <Github class="icon" />
-            <span>Connect with GitHub</span>
-          </button>
-          <button @click="navigateToLogin" class="btn-secondary">
-            View Live Demo
-            <ArrowRight class="icon-arrow" />
+        <div class="hero-cta fade-in">
+          <button @click="navigateToLogin" class="btn-primary large">
+            <Github :size="20" />
+            Commencer avec GitHub
           </button>
         </div>
+      </div>
+    </section>
 
-        <!-- UI Mockup / abstract viz -->
-        <div 
-          class="hero-visual slide-up-5" 
-          ref="heroVisual"
-          @mousemove="handleMouseMove"
-          @mouseleave="handleMouseLeave"
-        >
-          <div class="code-window glass-panel" ref="codeWindow">
-            <div class="window-header">
-              <div class="dots">
-                <span class="dot red"></span>
-                <span class="dot yellow"></span>
-                <span class="dot green"></span>
+    <!-- App Preview Section -->
+    <section class="app-preview">
+      <div class="container">
+        <div class="section-header fade-in">
+          <h2>Interface simple et intuitive</h2>
+          <p>Créez, personnalisez et envoyez vos rapports Git en quelques clics.</p>
+        </div>
+
+        <div class="carousel-wrapper fade-in">
+          <div class="screenshot-glow"></div>
+          
+          <!-- Carousel Container -->
+          <div class="carousel-container">
+            <div 
+              class="carousel-track"
+              :style="{ transform: `translateX(-${currentSlide * 100}%)` }"
+            >
+              <div 
+                v-for="(slide, index) in slides" 
+                :key="index"
+                class="carousel-slide"
+              >
+                <div class="app-screenshot">
+                  <img :src="slide.src" :alt="slide.alt" />
+                </div>
               </div>
-              <div class="bar">git-reporter — generate</div>
             </div>
-            <div class="window-body">
-              <div class="code-line"><span class="blue">➜</span> <span class="purple">git-reporter</span> init</div>
-              <div class="code-line"><span class="green">✔</span> Analyzing complete history...</div>
-              <div class="code-line"><span class="green">✔</span> Generating team velocity chart...</div>
-              <div class="code-line"><span class="green">✔</span> Report sent to <span class="underline">team@company.com</span></div>
-              <div class="code-line typing">_</div>
-            </div>
-            <div class="visual-glow"></div>
+
+            <!-- Navigation Arrows -->
+            <button 
+              @click="prevSlide" 
+              class="carousel-btn carousel-btn-prev"
+              aria-label="Image précédente"
+            >
+              <ChevronLeft :size="24" />
+            </button>
+            <button 
+              @click="nextSlide" 
+              class="carousel-btn carousel-btn-next"
+              aria-label="Image suivante"
+            >
+              <ChevronRight :size="24" />
+            </button>
+          </div>
+
+          <!-- Dots Indicator -->
+          <div class="carousel-dots">
+            <button
+              v-for="(slide, index) in slides"
+              :key="index"
+              @click="goToSlide(index)"
+              :class="['dot', { active: currentSlide === index }]"
+              :aria-label="`Aller à l'image ${index + 1}`"
+            ></button>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Features Bento Grid -->
+    <!-- Features Section -->
     <section class="features">
-      <div class="section-header scroll-reveal">
-        <h2>Engineered for Scale</h2>
-        <p>Everything you need to track progress without the micromanagement.</p>
-      </div>
-      
-      <div class="bento-grid">
-        <div 
-          v-for="(feature, idx) in features" 
-          :key="idx"
-          class="bento-card glass-panel scroll-reveal"
-          :class="feature.class"
-        >
-          <div class="card-bg" :class="`bg-gradient-to-br ${feature.gradient}`"></div>
-          <div class="card-content">
-            <div class="icon-box">
-              <component :is="feature.icon" />
+      <div class="container">
+        <div class="section-header fade-in">
+          <h2>Tout ce dont vous avez besoin</h2>
+          <p>Des fonctionnalités pensées pour les équipes de développement modernes.</p>
+        </div>
+
+        <div class="features-grid">
+          <div 
+            v-for="(feature, idx) in features" 
+            :key="idx"
+            class="feature-card fade-in"
+          >
+            <div class="feature-icon">
+              <component :is="feature.icon" :size="24" />
             </div>
             <h3>{{ feature.title }}</h3>
             <p>{{ feature.desc }}</p>
@@ -214,42 +240,81 @@ function navigateToLogin() {
       </div>
     </section>
 
-    <!-- How it works -->
-    <section class="steps">
-      <div class="steps-container">
-        <div v-for="(step, i) in steps" :key="i" class="step-item scroll-reveal">
-          <div class="step-line" v-if="i !== steps.length - 1"></div>
-          <div class="step-num">{{ step.num }}</div>
-          <h4>{{ step.title }}</h4>
-          <p>{{ step.desc }}</p>
+    <!-- How it Works -->
+    <section class="how-it-works">
+      <div class="container">
+        <div class="section-header fade-in">
+          <h2>Comment ça marche</h2>
+          <p>Trois étapes simples pour automatiser vos rapports Git.</p>
+        </div>
+
+        <div class="steps">
+          <div class="step fade-in">
+            <div class="step-number">01</div>
+            <div class="step-content">
+              <h3>Connectez</h3>
+              <p>Liez votre compte GitHub via OAuth. Sélectionnez vos dépôts en toute sécurité.</p>
+            </div>
+          </div>
+
+          <div class="step fade-in">
+            <div class="step-number">02</div>
+            <div class="step-content">
+              <h3>Configurez</h3>
+              <p>Choisissez la période, les destinataires et le format de vos rapports.</p>
+            </div>
+          </div>
+
+          <div class="step fade-in">
+            <div class="step-number">03</div>
+            <div class="step-content">
+              <h3>Envoyez</h3>
+              <p>Rapport généré et envoyé automatiquement par Email ou WhatsApp.</p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
     <!-- CTA Section -->
-    <section class="bottom-cta">
-      <div class="cta-card glass-panel scroll-reveal">
-        <div class="glow-effect"></div>
-        <h2>Ready to upgrade your workflow?</h2>
-        <p>Join elite teams using Git Reporter today.</p>
-        <button @click="navigateToLogin" class="btn-primary large">
-          Start for Free
-        </button>
-        <div class="trust-badges">
-          <span><CheckCircle2 :size="14"/> No credit card required</span>
-          <span><CheckCircle2 :size="14"/> 14-day Pro trial included</span>
+    <section class="cta">
+      <div class="container">
+        <div class="cta-card fade-in">
+          <h2>Prêt à automatiser vos rapports ?</h2>
+          <p>Rejoignez les équipes qui utilisent Git Reporter pour gagner du temps.</p>
+          <button @click="navigateToLogin" class="btn-primary large">
+            Commencer gratuitement
+          </button>
+          <div class="trust-badges">
+            <span>
+              <CheckCircle2 :size="16" />
+              100% Gratuit et Open Source
+            </span>
+            <span>
+              <CheckCircle2 :size="16" />
+              Aucune carte bancaire requise
+            </span>
+          </div>
         </div>
       </div>
     </section>
 
+    <!-- Footer -->
     <footer class="footer">
-      <div class="footer-content">
-        <div class="footer-brand">
-          <Terminal :size="20" />
-          <span>Git Reporter</span>
-        </div>
-        <div class="footer-links">
-          <span>© 2024 Git Reporter Inc.</span>
+      <div class="container">
+        <div class="footer-content">
+          <div class="footer-brand">
+            <Terminal :size="20" />
+            <span>Git Reporter</span>
+          </div>
+          <div class="footer-links">
+            <a href="https://github.com" target="_blank">Documentation</a>
+            <a href="https://github.com" target="_blank">GitHub</a>
+            <a href="mailto:support@gitreporter.com">Support</a>
+          </div>
+          <div class="footer-copy">
+            © 2024 Git Reporter. Fait avec ❤️ pour les développeurs.
+          </div>
         </div>
       </div>
     </footer>
@@ -257,79 +322,43 @@ function navigateToLogin() {
 </template>
 
 <style scoped>
-/* --- Tokens & Base --- */
-.landing-page {
-  --bg-dark: #030712;
-  --bg-card: rgba(17, 24, 39, 0.7);
-  --primary: #3b82f6;
-  --primary-glow: rgba(59, 130, 246, 0.5);
-  --secondary: #8b5cf6;
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --glass-border: rgba(255, 255, 255, 0.08);
+/* --- Variables --- */
+.landing {
+  --bg-primary: #ffffff;
+  --bg-secondary: #fafafa;
+  --text-primary: #171717;
+  --text-secondary: #737373;
+  --border: #e5e5e5;
+  --accent: #000000;
   
-  background-color: var(--bg-dark);
-  color: var(--text-main);
-  font-family: 'Inter', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   min-height: 100vh;
-  position: relative;
-  overflow-x: hidden;
-  selection-background-color: var(--primary);
-  selection-color: white;
 }
 
-h1, h2, h3, h4 {
-  font-family: 'Outfit', sans-serif;
-  letter-spacing: -0.02em;
+@media (prefers-color-scheme: dark) {
+  .landing {
+    --bg-primary: #0a0a0a;
+    --bg-secondary: #171717;
+    --text-primary: #ededed;
+    --text-secondary: #a3a3a3;
+    --border: #262626;
+    --accent: #ffffff;
+  }
 }
 
-/* --- Ambient Effects --- */
-.noise-overlay {
-  position: fixed;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
-  opacity: 0.07;
-  pointer-events: none;
-  z-index: 0;
+/* --- Typography --- */
+h1, h2, h3 {
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
 }
 
-.ambient-glow {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(120px);
-  z-index: 0;
-  opacity: 0.4;
-  animation: breathe 8s infinite alternate;
-}
-
-.glow-1 {
-  width: 500px;
-  height: 500px;
-  background: var(--primary);
-  top: -10%;
-  left: -10%;
-}
-
-.glow-2 {
-  width: 400px;
-  height: 400px;
-  background: var(--secondary);
-  bottom: 20%;
-  right: -5%;
-  animation-delay: 2s;
-}
-
-@keyframes breathe {
-  0% { opacity: 0.3; transform: scale(1); }
-  100% { opacity: 0.5; transform: scale(1.1); }
-}
-
-/* --- Glassmorphism --- */
-.glass-panel {
-  background: var(--bg-card);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
 }
 
 /* --- Navigation --- */
@@ -337,15 +366,24 @@ h1, h2, h3, h4 {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  z-index: 50;
-  border-bottom: 1px solid var(--glass-border);
+  right: 0;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border);
+  z-index: 100;
+  backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+@media (prefers-color-scheme: dark) {
+  .nav {
+    background: rgba(10, 10, 10, 0.8);
+  }
 }
 
 .nav-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 1rem 1.5rem;
+  padding: 1rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -356,353 +394,583 @@ h1, h2, h3, h4 {
   align-items: center;
   gap: 0.5rem;
   font-weight: 700;
-  font-size: 1.25rem;
-  font-family: 'Outfit', sans-serif;
+  font-size: 1.125rem;
+  color: var(--text-primary);
 }
 
-.dot { color: var(--primary); }
-
-.nav-actions {
+.nav-links {
   display: flex;
-  gap: 1rem;
   align-items: center;
+  gap: 2rem;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.9375rem;
+  transition: color 0.2s;
+}
+
+.nav-link:hover {
+  color: var(--text-primary);
 }
 
 /* --- Buttons --- */
-.btn-primary, .btn-secondary, .btn-ghost {
+.btn-primary,
+.btn-secondary,
+.btn-ghost {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.75rem;
-  font-weight: 600;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  font-size: 0.9375rem;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-  font-size: 0.95rem;
+  transition: all 0.2s;
+  border: none;
+  text-decoration: none;
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary), #2563eb);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.2), 0 4px 12px rgba(59, 130, 246, 0.3);
+  background: var(--accent);
+  color: var(--bg-primary);
 }
 
 .btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.4), 0 8px 24px rgba(59, 130, 246, 0.5);
+  opacity: 0.9;
+  transform: translateY(-1px);
 }
 
-.btn-primary.small { padding: 0.5rem 1rem; font-size: 0.875rem; }
-.btn-primary.large { padding: 1rem 2.5rem; font-size: 1.1rem; }
+.btn-primary.large {
+  padding: 0.875rem 2rem;
+  font-size: 1rem;
+}
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--glass-border);
-  color: var(--text-main);
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--bg-secondary);
 }
 
 .btn-ghost {
   background: transparent;
-  color: var(--text-muted);
-  border: none;
-  padding: 0.5rem 1rem;
+  color: var(--text-secondary);
 }
 
-.btn-ghost:hover { color: var(--text-main); }
+.btn-ghost:hover {
+  color: var(--text-primary);
+}
 
-/* --- Hero Section --- */
+/* --- Hero --- */
 .hero {
-  position: relative;
-  padding: 180px 1.5rem 100px;
+  padding: 12rem 0 8rem;
   text-align: center;
+  position: relative;
   z-index: 10;
-  max-width: 1200px;
-  margin: 0 auto;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.875rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 2rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+}
+
+.badge-dot {
+  width: 6px;
+  height: 6px;
+  background: #22c55e;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 .hero-title {
-  font-size: clamp(3rem, 6vw, 5rem);
-  font-weight: 800;
-  line-height: 1.1;
+  font-size: clamp(2.5rem, 5vw, 4.5rem);
   margin-bottom: 1.5rem;
-}
-
-.text-gradient {
-  background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  position: relative;
-}
-
-.text-gradient::after {
-  content: 'Start Shipping Code.';
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  opacity: 0.5;
-  filter: blur(20px);
-  z-index: -1;
+  color: var(--text-primary);
 }
 
 .hero-desc {
   font-size: 1.25rem;
-  color: var(--text-muted);
-  max-width: 600px;
-  margin: 0 auto 3rem;
+  color: var(--text-secondary);
+  margin-bottom: 3rem;
   line-height: 1.6;
 }
 
 .hero-cta {
   display: flex;
   justify-content: center;
-  gap: 1.5rem;
-  margin-bottom: 5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
-.status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.35rem 1rem;
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.2);
-  border-radius: 2rem;
-  font-size: 0.875rem;
-  color: #60a5fa;
-  margin-bottom: 2rem;
+/* --- Animated Background --- */
+.beam-background {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(59, 130, 246, 0.03) 50%,
+    transparent 100%
+  );
+  background-size: 100% 200%;
+  animation: beams 60s linear infinite;
+  filter: blur(30px);
 }
 
-.status-dot {
-  width: 6px;
-  height: 6px;
-  background: #60a5fa;
+@keyframes beams {
+  0%, 100% { background-position: 0% 0%; }
+  50% { background-position: 0% 100%; }
+}
+
+.radial-glow {
+  position: fixed;
   border-radius: 50%;
-  box-shadow: 0 0 10px #60a5fa;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
 }
 
-/* --- Hero Visual --- */
-.hero-visual {
-  max-width: 800px;
-  margin: 0 auto;
-  perspective: 1000px;
+.glow-top {
+  width: 800px;
+  height: 800px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
+  top: -20%;
+  left: -10%;
+  animation: float 20s ease-in-out infinite;
 }
 
-.code-window {
-  border-radius: 12px;
-  overflow: hidden;
-  text-align: left;
-  transform: perspective(1000px) rotateX(10deg) scale(0.95);
-  transition: transform 0.2s ease-out; /* Faster for mouse move */
+.glow-bottom {
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.12) 0%, transparent 70%);
+  bottom: -15%;
+  right: -10%;
+  animation: float 25s ease-in-out infinite reverse;
+}
+
+@keyframes float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -30px) scale(1.05); }
+  66% { transform: translate(-20px, 20px) scale(0.95); }
+}
+
+/* --- App Preview --- */
+.app-preview {
+  padding: 8rem 0;
+  background: var(--bg-secondary);
   position: relative;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  overflow: hidden;
 }
 
-.hero-visual:hover .code-window {
-  transform: rotateX(0) scale(1);
+.carousel-wrapper {
+  position: relative;
+  max-width: 1000px;
+  margin: 0 auto;
+  overflow: hidden; /* Empêche de voir les autres slides */
+  mask-image: radial-gradient(
+    ellipse 100% 100% at 50% 50%,
+    black 40%,
+    transparent 100%
+  );
+  -webkit-mask-image: radial-gradient(
+    ellipse 100% 100% at 50% 50%,
+    black 40%,
+    transparent 100%
+  );
 }
 
-.window-header {
-  background: rgba(0, 0, 0, 0.3);
-  padding: 0.75rem 1rem;
+.screenshot-glow {
+  position: absolute;
+  inset: -50%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(59, 130, 246, 0.2) 0%,
+    transparent 50%
+  );
+  filter: blur(60px);
+  z-index: 0;
+  animation: pulse-glow 4s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+.carousel-container {
+  position: relative;
+  z-index: 1;
+  overflow: hidden; /* Important : cache les slides hors vue */
+  border-radius: 1rem;
+  width: 100%; /* Assure que le conteneur prend toute la largeur */
+}
+
+.carousel-track {
+  display: flex;
+  transition: transform 0.5s ease-in-out;
+  width: 100%; /* Le track prend 100% de la largeur */
+}
+
+.carousel-slide {
+  min-width: 100%; /* Chaque slide prend exactement 100% */
+  max-width: 100%; /* Empêche le débordement */
+  flex-shrink: 0;
+  box-sizing: border-box; /* Inclut padding et border dans la largeur */
+}
+
+.app-screenshot {
+  position: relative;
+  border-radius: 1rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 20px 25px -5px rgba(0, 0, 0, 0.3),
+    0 10px 10px -5px rgba(0, 0, 0, 0.2);
+}
+
+.app-screenshot img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Carousel Navigation Buttons */
+.carousel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
-  border-bottom: 1px solid var(--glass-border);
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+  backdrop-filter: blur(8px);
 }
 
-.dots { display: flex; gap: 6px; }
-.dot { width: 10px; height: 10px; border-radius: 50%; }
-.red { background: #ef4444; }
-.yellow { background: #eab308; }
-.green { background: #22c55e; }
-
-.bar {
-  margin-left: 1rem;
-  font-family: monospace;
-  font-size: 0.8rem;
-  color: #64748b;
+.carousel-btn:hover {
+  background: rgba(0, 0, 0, 0.7);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-50%) scale(1.1);
 }
 
-.window-body {
-  padding: 1.5rem;
-  font-family: 'Fira Code', monospace;
-  font-size: 0.95rem;
-  color: #e2e8f0;
-  line-height: 1.6;
+.carousel-btn-prev {
+  left: 1rem;
 }
 
-.code-line { margin-bottom: 0.5rem; }
-.blue { color: #60a5fa; }
-.purple { color: #c084fc; font-weight: bold; }
-.green { color: #4ade80; }
-.underline { text-decoration: underline; text-decoration-color: #475569; }
-
-.typing {
-  animation: blink 1s step-end infinite;
+.carousel-btn-next {
+  right: 1rem;
 }
 
-/* --- Features --- */
-.features {
-  padding: 6rem 1.5rem;
-  max-width: 1200px;
-  margin: 0 auto;
+/* Carousel Dots */
+.carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 2rem;
+  position: relative;
+  z-index: 10;
+}
+
+.carousel-dots .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--border);
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0;
+}
+
+.carousel-dots .dot:hover {
+  background: var(--text-secondary);
+  transform: scale(1.2);
+}
+
+.carousel-dots .dot.active {
+  background: var(--accent);
+  width: 32px;
+  border-radius: 5px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .app-screenshot {
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 
+      0 0 0 1px rgba(255, 255, 255, 0.08),
+      0 20px 25px -5px rgba(0, 0, 0, 0.5),
+      0 10px 10px -5px rgba(0, 0, 0, 0.3);
+  }
+  
+  .carousel-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+  
+  .carousel-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .carousel-btn {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .carousel-btn-prev {
+    left: 0.5rem;
+  }
+  
+  .carousel-btn-next {
+    right: 0.5rem;
+  }
+}
+
+/* --- Integration --- */
+.integration {
+  padding: 8rem 0;
+  background: var(--bg-secondary);
 }
 
 .section-header {
   text-align: center;
-  margin-bottom: 5rem;
+  margin-bottom: 4rem;
 }
 
 .section-header h2 {
   font-size: 2.5rem;
-  font-weight: 700;
   margin-bottom: 1rem;
-  background: linear-gradient(to right, #fff, #94a3b8);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
 }
 
 .section-header p {
-  color: var(--text-muted);
-  font-size: 1.1rem;
+  font-size: 1.125rem;
+  color: var(--text-secondary);
 }
 
-.bento-grid {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 1.5rem;
-}
-
-.bento-card {
-  border-radius: 1.5rem;
-  padding: 2.5rem;
-  position: relative;
+.code-demo {
+  max-width: 800px;
+  margin: 0 auto;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
   overflow: hidden;
-  transition: all 0.4s ease;
-  min-height: 280px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-.bento-card:hover {
-  transform: translateY(-5px);
-  border-color: rgba(255, 255, 255, 0.2);
+.code-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
 }
 
-.card-bg {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  transition: opacity 0.5s ease;
+.code-dots {
+  display: flex;
+  gap: 0.5rem;
 }
 
-.bento-card:hover .card-bg { opacity: 1; }
+.code-dots span {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--border);
+}
 
-.card-content {
+.code-title {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-family: 'Fira Code', monospace;
+}
+
+.code-body {
+  padding: 2rem 1.5rem;
+  overflow-x: auto;
+}
+
+.code-body pre {
+  margin: 0;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+}
+
+.code-body code {
+  color: var(--text-primary);
+}
+
+.code-keyword { color: #d946ef; font-weight: 600; }
+.code-string { color: #22c55e; }
+.code-function { color: #3b82f6; }
+.code-property { color: #f59e0b; }
+.code-comment { color: var(--text-secondary); font-style: italic; }
+
+.code-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.link-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.9375rem;
+  transition: color 0.2s;
+}
+
+.link-button:hover {
+  color: var(--text-primary);
+}
+
+/* --- Features --- */
+.features {
+  padding: 8rem 0;
   position: relative;
-  z-index: 1;
+  z-index: 10;
 }
 
-.icon-box {
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.feature-card {
+  padding: 2rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  transition: all 0.3s ease;
+  background: var(--bg-primary);
+}
+
+.feature-card:hover {
+  border-color: var(--text-secondary);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .feature-card:hover {
+    box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.feature-icon {
   width: 3rem;
   height: 3rem;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--glass-border);
-  color: var(--primary);
+  background: var(--bg-secondary);
+  border-radius: 0.5rem;
   margin-bottom: 1.5rem;
+  color: var(--accent);
 }
 
-.bento-card h3 {
-  font-size: 1.5rem;
-  font-weight: 600;
+.feature-card h3 {
+  font-size: 1.25rem;
   margin-bottom: 0.75rem;
 }
 
-.bento-card p {
-  color: var(--text-muted);
+.feature-card p {
+  color: var(--text-secondary);
   line-height: 1.6;
 }
 
-/* --- Steps --- */
+/* --- How it Works --- */
+.how-it-works {
+  padding: 8rem 0;
+  background: var(--bg-secondary);
+  position: relative;
+  z-index: 10;
+}
+
 .steps {
-  padding: 6rem 1.5rem;
-  max-width: 1000px;
+  max-width: 800px;
   margin: 0 auto;
 }
 
-.steps-container {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+.step {
+  display: flex;
   gap: 2rem;
-  text-align: center;
+  padding: 3rem 0;
+  border-bottom: 1px solid var(--border);
 }
 
-.step-item { position: relative; }
+.step:last-child {
+  border-bottom: none;
+}
 
-.step-num {
-  font-family: 'Outfit', sans-serif;
-  font-size: 4rem;
+.step-number {
+  font-size: 3rem;
   font-weight: 800;
-  color: rgba(255, 255, 255, 0.03);
-  position: absolute;
-  top: -2rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 0;
+  color: var(--text-secondary);
+  opacity: 0.3;
+  line-height: 1;
 }
 
-.step-item h4 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
+.step-content h3 {
+  font-size: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.step-content p {
+  color: var(--text-secondary);
+  line-height: 1.6;
+  font-size: 1.0625rem;
+}
+
+/* --- CTA --- */
+.cta {
+  padding: 8rem 0;
   position: relative;
-  z-index: 1;
-  color: var(--primary);
-}
-
-.step-item p {
-  color: var(--text-muted);
-  font-size: 0.95rem;
-  position: relative;
-  z-index: 1;
-}
-
-/* --- Bottom CTA --- */
-.bottom-cta {
-  padding: 6rem 1.5rem;
-  max-width: 900px;
-  margin: 0 auto;
+  z-index: 10;
 }
 
 .cta-card {
-  padding: 5rem 2rem;
   text-align: center;
-  border-radius: 2rem;
-  position: relative;
-  overflow: hidden;
-}
-
-.glow-effect {
-  position: absolute;
-  top: -50%;
-  left: 50%;
-  width: 100%;
-  height: 200%;
-  background: conic-gradient(from 180deg at 50% 50%, transparent 0deg, rgba(59, 130, 246, 0.1) 180deg, transparent 360deg);
-  transform: translateX(-50%);
-  animation: rotate 10s linear infinite;
-  pointer-events: none;
+  padding: 5rem 2rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
 }
 
 .cta-card h2 {
@@ -711,73 +979,116 @@ h1, h2, h3, h4 {
 }
 
 .cta-card p {
-  color: var(--text-muted);
+  font-size: 1.125rem;
+  color: var(--text-secondary);
   margin-bottom: 2.5rem;
-  font-size: 1.1rem;
 }
 
 .trust-badges {
-  margin-top: 2rem;
   display: flex;
   justify-content: center;
   gap: 2rem;
-  color: var(--text-muted);
-  font-size: 0.875rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
 }
 
-.trust-badges span { display: flex; align-items: center; gap: 6px; }
+.trust-badges span {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+}
 
 /* --- Footer --- */
 .footer {
-  border-top: 1px solid var(--glass-border);
-  padding: 2rem 0;
-  background: rgba(3, 7, 18, 0.8);
+  padding: 4rem 0;
+  border-top: 1px solid var(--border);
+  background: var(--bg-secondary);
 }
 
 .footer-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: #64748b;
-  font-size: 0.9rem;
+  flex-wrap: wrap;
+  gap: 2rem;
 }
 
 .footer-brand {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #e2e8f0;
+  font-weight: 600;
+}
+
+.footer-links {
+  display: flex;
+  gap: 2rem;
+}
+
+.footer-links a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.9375rem;
+  transition: color 0.2s;
+}
+
+.footer-links a:hover {
+  color: var(--text-primary);
+}
+
+.footer-copy {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
 }
 
 /* --- Animations --- */
-@keyframes blink { 50% { opacity: 0; } }
-@keyframes rotate { from { transform: translateX(-50%) rotate(0deg); } to { transform: translateX(-50%) rotate(360deg); } }
-
-.slide-up-1 { opacity: 0; transform: translateY(20px); animation: slideUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; animation-delay: 0.1s; }
-.slide-up-2 { opacity: 0; transform: translateY(20px); animation: slideUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; animation-delay: 0.2s; }
-.slide-up-3 { opacity: 0; transform: translateY(20px); animation: slideUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; animation-delay: 0.3s; }
-.slide-up-4 { opacity: 0; transform: translateY(20px); animation: slideUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; animation-delay: 0.4s; }
-.slide-up-5 { opacity: 0; transform: translateY(40px); animation: slideUp 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; animation-delay: 0.5s; }
-
-@keyframes slideUp {
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.reveal {
+.fade-in {
   opacity: 0;
-  transform: translateY(30px);
-  animation: slideUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
 }
 
-/* Mobile Tweaks */
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* --- Responsive --- */
 @media (max-width: 768px) {
-  .hero-title { font-size: 3rem; }
-  .bento-grid { grid-template-columns: 1fr; }
-  .col-span-12, .col-span-8, .col-span-4 { grid-column: span 1 / -1; }
-  .steps-container { grid-template-columns: 1fr; gap: 3rem; }
-  .hero-cta { flex-direction: column; }
+  .nav-links {
+    gap: 1rem;
+  }
+  
+  .nav-link {
+    display: none;
+  }
+  
+  .hero {
+    padding: 8rem 0 4rem;
+  }
+  
+  .hero-title {
+    font-size: 2.5rem;
+  }
+  
+  .section-header h2 {
+    font-size: 2rem;
+  }
+  
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .step {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .footer-content {
+    flex-direction: column;
+    text-align: center;
+  }
 }
 </style>
